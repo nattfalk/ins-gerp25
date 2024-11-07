@@ -1,0 +1,1 @@
+..\..\tools\Shrinkler.exe uae\dh0\ins-gerp24 ins-weareback.exe -T ins-weareback.nfo
