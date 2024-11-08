@@ -151,8 +151,9 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			; dc.l	20*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
+			dc.l	3*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			dc.l	20*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
 			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt
 			; dc.l	28*50, Logo_Init, Logo_Run, Logo_Interrupt
 			; dc.l	34*50, Quads_Init, Quads_Run, Quads_Interrupt
@@ -170,8 +171,9 @@ FrameCounter:		dc.l	0
 	include	"include/sintab.i"
 
 	; include	"parts/endtext.s"
-	; include "parts/horizontal_strips.s"
-	include "parts/magnifier.s"
+	include "parts/horizontal_strips.s"
+	include	"parts/dot_remove.s"
+	; include "parts/magnifier.s"
 	; include	"parts/textlogo.s"
 	; include "parts/logo.s"
 	; include "parts/credits.s"
@@ -222,11 +224,13 @@ BlankLine:      dcb.b   40,0
 	SECTION	VariousData,DATA
 LSPMusic:
 	incbin	"data/music/we are back timefix.lsmusic"
+DotMask:
+	incbin	"data/graphics/circle_mask_16x112x1.raw"
 
 *******************************************************************************
 	SECTION ChipBuffers,BSS_C
 *******************************************************************************
-
+			even
 Screen:		ds.b	h*bwid*5
 Screen2:	ds.b	h*bwid*5
 
