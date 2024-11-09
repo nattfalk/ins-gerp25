@@ -47,8 +47,8 @@ DotRemove_Run:
 	jsr	BltClr
 	jsr	WaitBlitter
 
-
         bsr     DotRemove_Wave
+        bsr     DotRemove_Twirl
         bsr     DotRemove_RenderBlocks
 
         rts
@@ -58,17 +58,33 @@ DotRemove_Interrupt:
         addq.l  #1,DR_LocalFrameCounter
 
         move.l  DR_LocalFrameCounter(pc),d0
-        cmp.w   #120,d0
-        blo.s   .dotEffect
 
-        cmp.w   #400,d0
-        blo.s   .waveEffect
+        cmp.w   #120,d0
+        bgt.s   .wave
+        bsr.s   .dotEffect
+        bra     .done
+
+.wave:  cmp.w   #256,d0
+        bgt.s   .waveAndTwirl
+        bsr.s   .waveEffect
+        bra     .done
+
+.waveAndTwirl:
+        cmp.w   #500,d0
+        bgt.s   .done
+        bsr.s   .waveEffect
+        bsr.s   .twirlEffect
+        bra     .done
 
 .done:  rts
 
+.twirlEffect:
+        add.w   #4,DR_TwirlAngle
+        rts
+
 .waveEffect:
-        move.l  d7,-(sp)
         lea.l   DR_WaveSinIndex(pc),a0
+        move.l  d7,-(sp)
         move.w  DR_Columns(pc),d7
 .inc:   add.w   #30,(a0)+
         dbf     d7,.inc
@@ -82,7 +98,7 @@ DotRemove_Interrupt:
         addq.w  #1,DR_Columns
 
 .waveExit:
-        bra     .done
+        rts
 
 .dotEffect:
         and.l   #1,d0
@@ -96,9 +112,54 @@ DotRemove_Interrupt:
         addq.w  #2,(a0)+
         addq.w  #2,(a0)
 .dotEffectExit:
-        bra     .done
+        rts
 
 ************************************************************
+        even
+DotRemove_Twirl:
+        move.w  DR_TwirlAngle(pc),d0
+        beq.s   .done
+
+        lea.l   Sintab,a0
+        lea.l   Costab,a1
+
+        lea.l   DR_Positions(pc),a2
+
+        and.w   #$3fe,d0
+        add.w   d0,d0
+        move.w  (a0,d0.w),d2    ; sin(v)
+        move.w  (a1,d0.w),d3    ; cos(v)
+
+        moveq   #15,d6
+
+        move.w  #DR_NrColumns*DR_NrRows-1,d7
+.rotate:
+        move.w  (a2),d0
+        move.w  d2,d4
+        move.w  6(a2),d1
+        move.w  d3,d5
+
+        muls    d0,d5   ; x * cos(v)
+        muls    d1,d4   ; y * sin(v)
+        sub.l   d4,d5   ; x' = x * cos(v) - y * sin(v)
+        ; asr.l   #8,d5
+        ; asr.l   #7,d5
+        asr.l   d6,d5
+        move.w  d5,2(a2)
+
+        muls    d2,d0   ; x * sin(v)
+        muls    d3,d1   ; y * cos(v)
+        add.l   d0,d1   ; y' = x * sin(v) * y * cos(v)
+        ; asr.l   #8,d1
+        ; asr.l   #7,d1
+        asr.l   d6,d1
+        move.w  d1,6(a2)
+
+        adda.l  #8,a2
+
+        dbf     d7,.rotate
+.done:  rts
+
 DotRemove_Wave:
         lea.l   DR_WaveSinIndex(pc),a2
         tst.w   (a2)
@@ -124,16 +185,19 @@ OFFS    SET     0
 OFFS    SET     OFFS+(8*20)
         ENDR        
 
-        lea.l   8(a1),a1
+        addq.l  #8,a1
         dbf     d7,.move
 .done:  rts
 
 DotRemove_RenderBlocks:
+        move.l  a6,-(sp)
+
         move.l  DrawBuffer,a0
         lea.l   DR_Positions(pc),a1
         lea.l   DR_RowIndex(pc),a2
         lea.l   DR_DotIndexTable(pc),a3
         lea.l   DotMask,a4
+        lea.l   Mulu40,a6
 
         moveq   #DR_NrRows-1,d7
 .renderRow:
@@ -143,13 +207,18 @@ DotRemove_RenderBlocks:
         move.w  (a3,d0.w),d1            ; Offset to dot mask
 
         move.l  (a1)+,d2
+        add.w   #160-8,d2
         move.w  d2,d4
         move.l  (a1)+,d3
         add.w   #128-8,d3
         lsr.w   #3,d2
-        and.w   #7,d4
+        and.w   #$fffe,d2
+        and.w   #15,d4
 
-        mulu    #40,d3
+        ; mulu    #40,d3
+        add.w   d3,d3
+        move.w  (a6,d3.w),d3
+
         add.w   d2,d3
 
         lea.l   (a0,d3.w),a5
@@ -157,9 +226,9 @@ DotRemove_RenderBlocks:
 I       SET     0
 II      SET     0
         REPT    16
-        move.w  II(a4,d1.w),d5
-        lsr.w   d4,d5
-        or.w    d5,I(a5)
+        move.l  II(a4,d1.w),d5
+        lsr.l   d4,d5
+        or.l    d5,I(a5)
 I       SET     I+40
 II      SET     II+4
         ENDR
@@ -168,12 +237,15 @@ II      SET     II+4
         dbf     d6,.renderBlock
         dbf     d7,.renderRow
 
+        move.l  (sp)+,a6
         rts
 
 ************************************************************
         even
 
 DR_LocalFrameCounter:   dc.l    0
+
+DR_TwirlAngle:          dc.w    0
 
 DR_WaveSinIndex:        dcb.w   DR_NrColumns,0
 DR_Columns:             dc.w    0
@@ -218,7 +290,7 @@ DR_DotIndexTable:       dcb.w   20,0
 DR_Positions:           
 Y                       SET     -32+8
                         REPT    DR_NrRows
-X                       SET     320-16
+X                       SET     160-16+8
                         REPT    DR_NrColumns
                         dc.w    X,X,Y,Y
 X                       SET     X-16

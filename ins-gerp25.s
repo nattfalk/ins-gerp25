@@ -168,6 +168,15 @@ EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
 FrameCounter:		dc.l	0
 
+			dcb.w	100,0
+Mulu40:
+I			SET		0
+			REPT	256
+			dc.w	I
+I			SET		I+40
+			ENDR
+			dcb.w	100,0
+
 ; FromPalette:		dc.w	$000,$000,$000,$000
 ; ToPalette:			dc.w	$158,$fff,$fff,$158
 
