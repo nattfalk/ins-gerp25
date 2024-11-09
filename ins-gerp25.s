@@ -1,4 +1,5 @@
 	include "include/hardware/custom.i"
+	include "include/bits.i"
 	INCLUDE "common/startup.s"
 	
 ********** Flags **************
@@ -22,8 +23,10 @@ WAITBLIT:macro
 ********** Demo **********
 Demo:
 	move.l	#VBint,$6c(a4)
-	move.w	#$c020,$9a(a6)
-	move.w	#$87c0,$96(a6)
+	; $c020
+	move.w	#INTF_SETCLR|INTF_INTEN|INTF_VERTB,$9a(a6)
+	; $87c0
+	move.w	#DMAF_SETCLR|DMAF_BLTPRI|DMAF_DMAEN|DMAF_BPLEN|DMAF_COPEN|DMAF_BLTEN,$96(a6)
     
 	; Call precalc routines
 
@@ -151,7 +154,7 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	3*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			; dc.l	3*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
 			dc.l	20*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
 			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
 			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt
@@ -225,7 +228,7 @@ BlankLine:      dcb.b   40,0
 LSPMusic:
 	incbin	"data/music/we are back timefix.lsmusic"
 DotMask:
-	incbin	"data/graphics/circle_mask_16x112x1.raw"
+	incbin	"data/graphics/circle_mask_2_32x160x1.raw"
 
 *******************************************************************************
 	SECTION ChipBuffers,BSS_C
