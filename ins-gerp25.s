@@ -156,7 +156,7 @@ ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
 			; dc.l	3*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			; dc.l	20*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			; dc.l	10*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
 			dc.l	20*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
 			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
 			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt

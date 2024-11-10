@@ -44,18 +44,23 @@ SineScroller_Init:
 		lea.l	SS_CustomFont,a1
 		move.w	#520-1,d7
 .scaleFont:
+		IFNE	SS_FontHeight-20
 		move.b	(a0)+,d0
 		REPT	SS_FontHeight/8
 		move.b	d0,(a1)+
 		ENDR
+		ENDC
 
-		; REPT	4
-		; move.b	(a0),(a1)+
-		; move.b	(a0),(a1)+
-		; move.b	(a0)+,(a1)+
-		; move.b	(a0),(a1)+
-		; move.b	(a0)+,(a1)+
-		; ENDR
+		IFEQ	SS_FontHeight-20
+		; Use for FontHeight = 20
+		REPT	4
+		move.b	(a0),(a1)+
+		move.b	(a0),(a1)+
+		move.b	(a0)+,(a1)+
+		move.b	(a0),(a1)+
+		move.b	(a0)+,(a1)+
+		ENDR
+		ENDC
 
 		dbf		d7,.scaleFont
 
@@ -74,14 +79,11 @@ SineScroller_Run:
 
 		move.l	a3,a0
 		lea		SS_BplPtrs+2,a1
-		; moveq   #0,d0
         move.l  #6*40,d0
 		moveq	#2-1,d1
 		jsr		SetBpls
 
 		move.l	a2,a0
-		; move.l  #(256<<6)+(320>>4),d0
-		; lea.l	(128-30)*40(a0),a0
 		jsr		WaitBlitter
 		move.l  #(90<<6)+(320>>4),d0
 		jsr		BltClr
