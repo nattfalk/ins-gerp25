@@ -48,7 +48,6 @@ DotRemove_Run:
 	jsr	WaitBlitter
 
         bsr     DotRemove_Wave
-        bsr     DotRemove_Twirl
         bsr     DotRemove_RenderBlocks
 
         rts
@@ -72,14 +71,21 @@ DotRemove_Interrupt:
 .waveAndTwirl:
         cmp.w   #500,d0
         bgt.s   .done
+        bsr.s   .scaleDownEffect
         bsr.s   .waveEffect
-        bsr.s   .twirlEffect
         bra     .done
 
 .done:  rts
 
-.twirlEffect:
-        add.w   #4,DR_TwirlAngle
+.scaleDownEffect:
+        move.l  DR_LocalFrameCounter(pc),d0
+        and.w   #3,d0
+        bne.s   .scaleDoneExit
+
+        tst.w   DR_ScaleFactor
+        beq.s   .scaleDoneExit
+        subq.w  #1,DR_ScaleFactor
+.scaleDoneExit:
         rts
 
 .waveEffect:
@@ -96,7 +102,6 @@ DotRemove_Interrupt:
         bne.s   .waveExit
 
         addq.w  #1,DR_Columns
-
 .waveExit:
         rts
 
@@ -116,50 +121,6 @@ DotRemove_Interrupt:
 
 ************************************************************
         even
-DotRemove_Twirl:
-        move.w  DR_TwirlAngle(pc),d0
-        beq.s   .done
-
-        lea.l   Sintab,a0
-        lea.l   Costab,a1
-
-        lea.l   DR_Positions(pc),a2
-
-        and.w   #$3fe,d0
-        add.w   d0,d0
-        move.w  (a0,d0.w),d2    ; sin(v)
-        move.w  (a1,d0.w),d3    ; cos(v)
-
-        moveq   #15,d6
-
-        move.w  #DR_NrColumns*DR_NrRows-1,d7
-.rotate:
-        move.w  (a2),d0
-        move.w  d2,d4
-        move.w  6(a2),d1
-        move.w  d3,d5
-
-        muls    d0,d5   ; x * cos(v)
-        muls    d1,d4   ; y * sin(v)
-        sub.l   d4,d5   ; x' = x * cos(v) - y * sin(v)
-        ; asr.l   #8,d5
-        ; asr.l   #7,d5
-        asr.l   d6,d5
-        move.w  d5,2(a2)
-
-        muls    d2,d0   ; x * sin(v)
-        muls    d3,d1   ; y * cos(v)
-        add.l   d0,d1   ; y' = x * sin(v) * y * cos(v)
-        ; asr.l   #8,d1
-        ; asr.l   #7,d1
-        asr.l   d6,d1
-        move.w  d1,6(a2)
-
-        adda.l  #8,a2
-
-        dbf     d7,.rotate
-.done:  rts
-
 DotRemove_Wave:
         lea.l   DR_WaveSinIndex(pc),a2
         tst.w   (a2)
@@ -210,12 +171,16 @@ DotRemove_RenderBlocks:
         add.w   #160-8,d2
         move.w  d2,d4
         move.l  (a1)+,d3
+
+        move.w  DR_ScaleFactor,d5
+        muls    d5,d3
+        asr.l   #5,d3
+
         add.w   #128-8,d3
         lsr.w   #3,d2
         and.w   #$fffe,d2
         and.w   #15,d4
 
-        ; mulu    #40,d3
         add.w   d3,d3
         move.w  (a6,d3.w),d3
 
@@ -245,7 +210,7 @@ II      SET     II+4
 
 DR_LocalFrameCounter:   dc.l    0
 
-DR_TwirlAngle:          dc.w    0
+DR_ScaleFactor:         dc.w    32
 
 DR_WaveSinIndex:        dcb.w   DR_NrColumns,0
 DR_Columns:             dc.w    0
