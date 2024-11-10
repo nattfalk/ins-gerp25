@@ -3,7 +3,7 @@
 ************************************************************
         SECTION SineScroller, CODE_P
 
-SS_FontHeight		= 16
+SS_FontHeight		= 24
 
 		include	"include/blitter.i"
 
@@ -24,8 +24,8 @@ SineScroller_Init:
 
         move.l  ViewBuffer,a0
 		lea		SS_BplPtrs+2,a1
-        moveq   #0,d0
-		moveq	#1-1,d1
+        move.l  #6*40,d0
+		moveq	#2-1,d1
 		jsr		SetBpls
 
     	move.l	#SS_Copper,$80(a6)
@@ -45,8 +45,18 @@ SineScroller_Init:
 		move.w	#520-1,d7
 .scaleFont:
 		move.b	(a0)+,d0
+		REPT	SS_FontHeight/8
 		move.b	d0,(a1)+
-		move.b	d0,(a1)+
+		ENDR
+
+		; REPT	4
+		; move.b	(a0),(a1)+
+		; move.b	(a0),(a1)+
+		; move.b	(a0)+,(a1)+
+		; move.b	(a0),(a1)+
+		; move.b	(a0)+,(a1)+
+		; ENDR
+
 		dbf		d7,.scaleFont
 
 		lea.l	SS_TextBuf,a0
@@ -64,14 +74,17 @@ SineScroller_Run:
 
 		move.l	a3,a0
 		lea		SS_BplPtrs+2,a1
-		moveq   #0,d0
-		moveq	#1-1,d1
+		; moveq   #0,d0
+        move.l  #6*40,d0
+		moveq	#2-1,d1
 		jsr		SetBpls
 
 		move.l	a2,a0
-		move.l  #(256<<6)+(320>>4),d0
-		jsr		BltClr
+		; move.l  #(256<<6)+(320>>4),d0
+		; lea.l	(128-30)*40(a0),a0
 		jsr		WaitBlitter
+		move.l  #(90<<6)+(320>>4),d0
+		jsr		BltClr
 
 		move.l	SS_LocalFrameCounter,d0
 		and.w	#3,d0
@@ -82,7 +95,7 @@ SineScroller_Run:
 
 		lea.l	SS_TextBuf,a0
 		move.l	DrawBuffer,a1
-		lea.l	128*40(a1),a1
+		lea.l	35*40(a1),a1
 		lea.l	SS_CustomSinTab,a2
 		move.l	SS_SinIndex(pc),d0
 		move.l	#12<<16|22,d4
@@ -109,7 +122,7 @@ SS_PrintChar:
 .print:	addq.l	#1,SS_TextPtr
 		sub.b	#' ',d0
         and.w   #$ff,d0
-        lsl.w   #4,d0
+		mulu	#SS_FontHeight,d0
 
 		lea.l	SS_CustomFont,a1
 		lea.l	(a1,d0.w),a1
@@ -144,6 +157,7 @@ SS_Scroll:
 ; D4 = Speed
 		even
 SS_BlitSineScroller:
+		jsr		WaitBlitter
 		move.w	#SRCA|SRCB|DEST|A_OR_B,bltcon0(a6)
 		move.w	#0,bltcon1(a6) 		;BC1F_DESC,bltcon1(a6)
 		move.w	#40,bltamod(a6)
@@ -232,12 +246,21 @@ SS_Copper:
 		dc.w	$0108,$0000
 		dc.w	$010a,$0000
 
-		dc.w	$0180,$0222
-		dc.w	$0182,$0fff
+		dc.w	$0180,$0000
+		dc.w	$0182,$0242
+		dc.w	$0184,$0beb
+		dc.w	$0186,$0beb
 
-		dc.w    $0100,$1200
+		dc.w	$8e01,$fffe
+		dc.w	$0180,$0473
+		dc.w    $0100,$2200
 SS_BplPtrs:
 		dc.w	$00e0,$0000,$00e2,$0000
+		dc.w	$00e4,$0000,$00e6,$0000
+
+		dc.w	$e801,$fffe
+		dc.w	$0100,$0200
+		dc.w	$0180,$0000
 
 		dc.w	$ffff,$fffe
 		dc.w	$ffff,$fffe
@@ -246,4 +269,4 @@ SS_BplPtrs:
 SS_TextBuf:		
 		ds.w	42*SS_FontHeight
 SS_CustomFont:
-		ds.b	1040
+		ds.b	520*3
