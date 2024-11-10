@@ -102,7 +102,7 @@ SS_PrintChar:
 		move.l	SS_TextPtr(pc),a0
 .testReset:
 		move.b	(a0),d0
-		beq.s	.print
+		bne.s	.print
 		move.l	#SS_Text,SS_TextPtr
 		move.l	SS_TextPtr(pc),a0
 		bra		.testReset
