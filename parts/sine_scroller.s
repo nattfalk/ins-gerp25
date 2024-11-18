@@ -73,8 +73,6 @@ SineScroller_Init:
 		rts
 
 SineScroller_Run:
-		jsr		LSP_MusicGetPos
-
 		movem.l	DrawBuffer,a2-a3
 		exg		a2,a3
 		movem.l	a2-a3,DrawBuffer

@@ -9,4 +9,5 @@ REM kingcon ..\gfx\dot_32x32x2.png ..\gfx\dot_32x32x2 -Format=s16 -RawPalette -W
 REM kingcon ..\data\graphics\Insane_logo.png ..\data\graphics\logo1_320x256x5 -Format=5 -RawPalette -Height=256
 REM kingcon ..\data\graphics\heart_320x256x3.iff ..\data\graphics\heart_320x256x3 -Format=3 -RawPalette -Height=256
 REM kingcon ..\data\graphics\weareback.png ..\data\graphics\weareback -Format=1 -RawPalette -Height=256
-kingcon ..\data\graphics\logo_320x64.png ..\data\graphics\logo -Format=4 -RawPalette -Height=64
+@REM kingcon ..\data\graphics\logo_320x64.png ..\data\graphics\logo -Format=4 -RawPalette -Height=64
+kingcon ..\data\graphics\logo-320x64x5.iff ..\data\graphics\logo -Format=5 -RawPalette -Height=64
