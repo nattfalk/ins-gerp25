@@ -4,7 +4,7 @@
 	INCLUDE "common/startup.s"
 	
 ********** Flags **************
-PLAY_MUSIC = 0
+PLAY_MUSIC = 1
 SHOW_RASTER = 1
 
 ********** Constants **********
@@ -14,20 +14,18 @@ bpls	= 1
 bpl	= w/16*2
 bwid	= bpls*bpl
 jhe
-********** Macros **********
-WAITBLIT:macro
-	tst.w	(a6)
-.wb\@:	btst	#6,2(a6)
-	bne.s	.wb\@
-	endm
-
 ********** Demo **********
 Demo:
 	move.l	#VBint,$6c(a4)
 	; $c020
+	IFEQ	PLAY_MUSIC-1
+	move.w	#INTF_SETCLR|INTF_INTEN|INTF_EXTER|INTF_VERTB,$9a(a6)
+	ELSE
 	move.w	#INTF_SETCLR|INTF_INTEN|INTF_VERTB,$9a(a6)
+	ENDIF
 	; $87c0
 	move.w	#DMAF_SETCLR|DMAF_BLTPRI|DMAF_DMAEN|DMAF_BPLEN|DMAF_COPEN|DMAF_BLTEN,$96(a6)
+	; move.w	#DMAF_SETCLR|DMAF_DMAEN|DMAF_BPLEN|DMAF_COPEN|DMAF_BLTEN,$96(a6)
     
 	; Call precalc routines
 
@@ -64,7 +62,7 @@ MainLoop:
 
 .mouse:
 	IFEQ	SHOW_RASTER-1
-	move.w	#$323,$180(a6)
+	move.w	#$39c,$180(a6)
 	ENDIF
 	btst	#6,$bfe001
 	bne.w	MainLoop
@@ -116,7 +114,6 @@ VBint:
 	cmp.l	#-1,(a0)
 	beq.s	.done
 
-	add.l	#1,FrameCounter
 	move.l	(a0),d0
 	cmp.l	FrameCounter,d0
 	bne.s	.run
@@ -128,6 +125,7 @@ VBint:
 .run:	
 	move.l	12(a0),a0
 	jsr		(a0)
+	add.l	#1,FrameCounter
 
 .done:
 	moveq	#$20,d0
@@ -146,8 +144,8 @@ VBint:
 	include	"common/math.s"
 	include	"common/textwriter_line.s"
 
-	include "common/LightSpeedPlayer_cia.s"
-	include "common/LightSpeedPlayer.s"
+	include "common/LightSpeedPlayer_cia.asm"
+	include "common/LightSpeedPlayer.asm"
 
 	even
 ********** Fastmem Data **********
@@ -156,8 +154,9 @@ ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
 			; dc.l	3*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			; dc.l	10*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			; dc.l	15*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
 			dc.l	20*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			; dc.l	15*50, Credits_Init, Credits_Run, Credits_Interrupt
 			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
 			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt
 			; dc.l	28*50, Logo_Init, Logo_Run, Logo_Interrupt
@@ -188,6 +187,7 @@ I			SET		I+40
 	include "parts/horizontal_strips.s"
 	include	"parts/dot_remove.s"
 	include	"parts/sine_scroller.s"
+	include	"parts/credits.s"
 	; include "parts/magnifier.s"
 	; include	"parts/textlogo.s"
 	; include "parts/logo.s"
@@ -232,13 +232,14 @@ MainBplCon:
 
 Font:			incbin	"data/graphics/vedderfont5.8x520.1.raw"
 
-LSPBank:		incbin	"data/music/we are back timefix.lsbank"
+				dcb.b	40000
+LSPBank:		incbin	"data/music/new highscore.lsbank"
 
 BlankLine:      dcb.b   40,0
 
 	SECTION	VariousData,DATA
 LSPMusic:
-	incbin	"data/music/we are back timefix.lsmusic"
+	incbin	"data/music/new highscore.lsmusic"
 DotMask:
 	incbin	"data/graphics/circle_mask_2_32x160x1.raw"
 
