@@ -1,6 +1,12 @@
     IFND    BLITTER_I    
 BLITTER_I   = 1
 
+WAITBLIT:macro
+	tst.w	(a6)
+.wb\@:	btst	#6,2(a6)
+	bne.s	.wb\@
+	endm
+
 HSIZEBITS 	= 6
 
 ABC         = $80
