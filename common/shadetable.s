@@ -11,6 +11,7 @@ CreateShadeTable:
     move.w  d0,.shadeTableFrom
     move.w  d1,.shadeTableTo
     move.w  d2,d6
+	subq.w	#1,d6
 
     moveq   #0,d7
 .createShade:
@@ -57,7 +58,7 @@ CreateShadeTable:
 
     addq.w  #1,d7
     cmp.w   d6,d7
-    bmi     .createShade
+    ble     .createShade
     rts
 
     even
