@@ -1,6 +1,7 @@
 	include "include/hardware/custom.i"
 	include "include/blitter.i"
 	include "include/bits.i"
+	include	"include/macros.i"
 	INCLUDE "common/startup.s"
 	
 ********** Flags **************
@@ -153,10 +154,11 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(20+17)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			; dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			; dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			; dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			dc.l	(20+17)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			; dc.l	(20+17)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
 			; dc.l	15*50, Credits_Init, Credits_Run, Credits_Interrupt
 			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
 			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt
@@ -190,6 +192,7 @@ I			SET		I+40
 	include	"parts/sine_scroller.s"
 	include	"parts/credits.s"
 	include	"parts/logo.s"
+	include	"parts/transition_to_scroller.s"
 	; include "parts/magnifier.s"
 	; include	"parts/textlogo.s"
 	; include "parts/logo.s"
