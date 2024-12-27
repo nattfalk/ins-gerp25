@@ -1,9 +1,9 @@
-# iNSANE - We Are Back
-40k intro for Gerp 2024
+# iNSANE - WORK IN PROGRESS
+40k intro for Gerp 2025
   
 Code by Prospect  
-Music by Mygg & Vedder  
-Graphics by Corel & Vedder  
+Music by ??  
+Graphics by ??  
   
 Code is built using VS Code and the [Amiga Assembly extension](https://github.com/prb28/vscode-amiga-assembly) by prb28  
 
@@ -12,6 +12,6 @@ All intro code written in plain MC68000 assembler. Some external tools for gener
 Uses the following additionals:
 * Startupcode from Photon/Scoopex  
 * LightSpeedConverter/Player by Leonard/Oxygene
-* Shrinkler by Blueberry
+* Shrinkler by Blueberry/Loonies
 
 Enjoy!
