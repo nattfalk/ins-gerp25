@@ -51,23 +51,31 @@ SineScroller_Init:
 		; Scale up font
 		lea.l	Font,a0
 		lea.l	SS_CustomFont,a1
+		moveq	#0,d0
 		move.w	#520-1,d7
 .scaleFont:
 		IFNE	SS_FONT_HEIGHT-20
 		move.b	(a0)+,d0
+		lsl.w	#8,d0
 		REPT	SS_FONT_HEIGHT/8
-		move.b	d0,(a1)+
+		move.w	d0,(a1)+
 		ENDR
 		ENDC
 
 		IFEQ	SS_FONT_HEIGHT-20
 		; Use for FontHeight = 20
 		REPT	4
-		move.b	(a0),(a1)+
-		move.b	(a0),(a1)+
-		move.b	(a0)+,(a1)+
-		move.b	(a0),(a1)+
-		move.b	(a0)+,(a1)+
+		move.b	(a0),d0
+		lsl.w	#8,d0
+		move.w	d0,(a1)+
+		move.w	d0,(a1)+
+		move.w	d0,(a1)+
+		addq.l	#1,a0
+		move.b	(a0),d0
+		lsl.w	#8,d0
+		move.w	d0,(a1)+
+		move.w	d0,(a1)+
+		addq.l	#1,a0
 		ENDR
 		ENDC
 
@@ -103,6 +111,8 @@ SineScroller_Init:
 		rts
 
 SineScroller_Run:
+		addq.l	#1,SS_LocalRunFrameCounter
+
 		tst.b	SS_ScrollTextDone
 		bne.s	.doFadeOut
 
@@ -121,7 +131,7 @@ SineScroller_Run:
 		move.l  #(90<<6)+(320>>4),d0
 		jsr		BltClr
 
-		move.l	SS_LocalFrameCounter,d0
+		move.l	SS_LocalRunFrameCounter,d0
 		and.w	#7,d0
 		bne.s	.skipPrint
 		bsr		SS_PrintChar
@@ -242,14 +252,14 @@ SS_PrintChar:
 		move.b	(a0),d0
 		bne.s	.print
 		move.b	#1,SS_ScrollTextDone
-		bra.s	.printDone
+		bra		.printDone
 		; move.l	#SS_Text,SS_TextPtr
 		; move.l	SS_TextPtr(pc),a0
 		; bra		.testReset
 .print:	addq.l	#1,SS_TextPtr
 		sub.b	#' ',d0
         and.w   #$ff,d0
-		mulu	#SS_FONT_HEIGHT,d0
+		mulu	#SS_FONT_HEIGHT*2,d0
 
 		lea.l	SS_CustomFont,a1
 		lea.l	(a1,d0.w),a1
@@ -257,7 +267,8 @@ SS_PrintChar:
 
 I       SET     0
         REPT    SS_FONT_HEIGHT
-        move.b  I(a1),I*42(a2)
+        move.w  I*2(a1),I*42(a2)
+        ; move.b  #0,I*42+1(a2)
 I       SET     I+1
         ENDR
 .printDone:
@@ -314,18 +325,17 @@ SS_BlitSineScroller:
 		move.l	d2,d3
 		lsr.w	#3,d3
 		and.l	#$fe,d3
-
-		WAITBLIT
 		
 		move.l	a0,a3
 		add.l	d3,a3
+		add.l	d1,d3				; Add y-position to destination
+		
+		WAITBLIT
 		move.l	a3,bltapth(a6)
 
 		move.l 	a1,a3				; Store destination in a3
-		add.l	d1,a3				; Add y-position to destination
 		add.l	d3,a3
 		move.l 	a3,bltbpth(a6)
-
 		move.l	a3,bltdpth(a6)
 		move.l	d5,bltafwm(a6)
 		move.w	#(SS_FONT_HEIGHT<<6)+1,bltsize(a6)
@@ -333,13 +343,8 @@ SS_BlitSineScroller:
 		addq.w	#1,d2
 		lsr.l	#1,d5
 
-		add.w	d4,d0
-		swap	d0
-		swap	d4
-		add.w	d4,d0
-		swap	d0
-		swap	d4
-		
+		add.l	d4,d0
+
 		dbf		d6,.innerLoop
 		dbf		d7,.outerLoop
 
@@ -351,11 +356,16 @@ SS_BlitSineScroller:
 		even
 SS_LocalFrameCounter:
 					dc.l	0
+SS_LocalRunFrameCounter:
+					dc.l	0
 SS_SinIndex:		dc.w	0,0
 
 SS_CustomSinTab:	ds.w	1024
-SS_Text:			dc.b	' -INSANE-            AT GERP 2025        '
-					dc.b	' WITH LOVE AND INSANITY'
+							;0123456789012345678901234567890123456789
+SS_Text:			
+					dc.b	'****************************************'
+					dc.b	'        -INSANE-        AT GERP 2025    '
+					dc.b	'    WITH LOVE AND INSANITY'
 					dc.b	'                                         ',0
 					even
 SS_TextPtr:			dc.l	SS_Text
@@ -566,4 +576,4 @@ SS_COL_14:
 SS_TextBuf:		
 		ds.w	42*SS_FONT_HEIGHT
 SS_CustomFont:
-		ds.b	520*3
+		ds.b	520*3*2
