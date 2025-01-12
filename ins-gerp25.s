@@ -5,8 +5,8 @@
 	INCLUDE "common/startup.s"
 	
 ********** Flags **************
-PLAY_MUSIC = 1
-SHOW_RASTER = 0
+PLAY_MUSIC = 0
+SHOW_RASTER = 1
 
 ********** Constants **********
 w		= 320
@@ -154,20 +154,14 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			; dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			; dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			; dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(4)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
-			dc.l	(20+17)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
-			; dc.l	15*50, Credits_Init, Credits_Run, Credits_Interrupt
-			; dc.l	20*50, Magnifier_Init, Magnifier_Run, Magnifier_Interrupt
-			; dc.l	19*50, TextLogo_Init, TextLogo_Run, TextLogo_Interrupt
-			; dc.l	28*50, Logo_Init, Logo_Run, Logo_Interrupt
-			; dc.l	34*50, Quads_Init, Quads_Run, Quads_Interrupt
-			; dc.l	72*50, Credits_Init, Credits_Run, Credits_Interrupt
-			; dc.l	100*50, StripeWall_Init, StripeWall_Run, StripeWall_Interrupt
-			; dc.l	160*50, EndText_Init, EndText_Run, EndText_Interrupt
-			dc.l	-1,-1
+			dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			dc.l	(10+17)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			dc.l	(4+27)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			dc.l	(20+31)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			dc.l	(20+51)*50, BigDots_Init, BigDots_Run, BigDots_Interrupt
+  			dc.l	-1,-1
 EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
 FrameCounter:		dc.l	0
@@ -186,20 +180,14 @@ I			SET		I+40
 
 	include	"include/sintab.i"
 
-	; include	"parts/endtext.s"
 	include "parts/horizontal_strips.s"
 	include	"parts/dot_remove.s"
 	include	"parts/sine_scroller.s"
 	include	"parts/credits.s"
 	include	"parts/logo.s"
 	include	"parts/transition_to_scroller.s"
-	; include "parts/magnifier.s"
-	; include	"parts/textlogo.s"
-	; include "parts/logo.s"
-	; include "parts/credits.s"
-	; include "parts/quads.s"
-	; include "parts/stripe_wall.s"
-
+	include "parts/big_dots.s"
+	include "parts/dot_ball.s"
 
 *******************************************************************************
 	SECTION ChipData,DATA_C
@@ -235,7 +223,6 @@ MainBplCon:
 
 ******************************************************
 
-Font:			incbin	"data/graphics/vedderfont5.8x520.1.raw"
 
 				dcb.b	40000
 LSPBank:		incbin	"data/music/new highscore.lsbank"
@@ -243,10 +230,10 @@ LSPBank:		incbin	"data/music/new highscore.lsbank"
 BlankLine:      dcb.b   40,0
 
 	SECTION	VariousData,DATA
-LSPMusic:
-	incbin	"data/music/new highscore.lsmusic"
-DotMask:
-	incbin	"data/graphics/circle_mask_2_32x160x1.raw"
+
+LSPMusic:		incbin	"data/music/new highscore.lsmusic"
+Font:			incbin	"data/graphics/vedderfont5.8x520.1.raw"
+DotMask:		incbin	"data/graphics/circle_mask_2_32x160x1.raw"
 
 *******************************************************************************
 	SECTION ChipBuffers,BSS_C
