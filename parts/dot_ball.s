@@ -259,7 +259,6 @@ DB_MorphDots:
 		move.w	d0,(a3)+
 
 		clr.w	(a2)+
-		; clr.w	(a3)+
 		move.w	#256,(a3)+
 
 		dbf		d7,.morph
@@ -306,7 +305,6 @@ I       SET     0
 I       SET     I+40
         ENDR
 
-        ; addq.w  #2,d0
         dbf     d7,.renderBlock
 
 		rts
