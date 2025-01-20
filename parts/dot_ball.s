@@ -1,5 +1,7 @@
 ************************************************************
+*
 * Main routines
+*
 ************************************************************
         SECTION DotBall, CODE_P
 
@@ -7,25 +9,28 @@
 
 DB_InitialDots		= 20
 
+************************************************************
+* Initialize
+************************************************************
 DotBall_Init:
 		lea.l	$dff000,a6
 
 		move.l	DrawBuffer,a0
-        move.l  #(256<<6)+(320>>4),d0
+        move.l  #(768<<6)+(320>>4),d0
         jsr		BltClr
 		jsr		WaitBlitter
 
         move.l  DrawBuffer,a0
 		lea		DB_BplPtrs+2,a1
-        moveq   #0,d0
-		moveq	#1-1,d1
+        move.l	#320*256>>3,d0
+		moveq	#3-1,d1
 		jsr		SetBpls
 
     	move.l	#DB_Copper,$80(a6)
 
 		; Set initial positions
 		lea.l	DB_InitialPositions(pc),a0
-		move.w	#-160,d0	; xpos
+		move.w	#-160+8,d0	; xpos
 		moveq	#DB_InitialDots-1,d7
 .create:
 		move.w	d0,(a0)+
@@ -38,7 +43,7 @@ DotBall_Init:
 		lea.l	Sintab,a1
 		lea.l	512(a1),a2
 		moveq	#0,d6
-		moveq	#20-1,d7
+		moveq	#DB_InitialDots-1,d7
 .createCircle:
 		move.w	(a1,d6.w),d0
 		asr.w	#8,d0
@@ -50,7 +55,7 @@ DotBall_Init:
 		asr.w	#1,d0
 		move.w	d0,(a0)+
 
-.next:	add.w	#(1024/20)*2,d6
+.next:	add.w	#(1024/DB_InitialDots)*2,d6
 		dbf		d7,.createCircle
 
 		; Create ball coords
@@ -63,7 +68,7 @@ DotBall_Init:
 .outerLoop:
 		move.l	a0,a1
 		moveq	#0,d5			; y angle
-		moveq	#20-1,d7
+		moveq	#DB_InitialDots-1,d7
 .createCoords:
 		cmp.w	#19,d7
 		beq.s	.next2
@@ -117,8 +122,48 @@ DotBall_Init:
 		addq.w	#1,d0
 		dbf		d7,.outerDMLoop
 
+		; Create scale tables
+		lea.l	DB_ScaleTableNeg(pc),a0
+		moveq	#127,d0
+		moveq	#64-1,d7
+.scaleLoopNeg:
+		moveq	#0,d1
+		move.l	a0,a1
+		moveq	#80-1,d6
+.scaleLoopInnerNeg:
+		move.l	d1,d2
+		muls	d0,d2
+		asr.w	#6,d2
+		move.w	d2,(a1)+
+		subq.w	#1,d1
+		dbf		d6,.scaleLoopInnerNeg
+		lea.l	128*2(a0),a0
+		subq.w	#1,d0
+		dbf		d7,.scaleLoopNeg
+
+		lea.l	DB_ScaleTablePos(pc),a0
+		moveq	#64,d0
+		moveq	#64-1,d7
+.scaleLoopPos:
+		moveq	#0,d1
+		move.l	a0,a1
+		moveq	#80-1,d6
+.scaleLoopInnerPos:
+		move.w	d1,d2
+		mulu	d0,d2
+		lsr.w	#6,d2
+		move.w	d2,(a1)+
+		addq.w	#1,d1
+		dbf		d6,.scaleLoopInnerPos
+		lea.l	128*2(a0),a0
+		addq.w	#1,d0
+		dbf		d7,.scaleLoopPos
+
 		rts
 
+************************************************************
+* Run
+************************************************************
 DotBall_Run:
 		movem.l	DrawBuffer,a2-a3
 		exg		a2,a3
@@ -126,17 +171,17 @@ DotBall_Run:
 
 		move.l	a3,a0
 		lea		DB_BplPtrs+2,a1
-		moveq   #0,d0
-		moveq	#1-1,d1
+		move.l	#320*256>>3,d0
+		moveq	#3-1,d1
 		jsr		SetBpls
 
 		move.l	a2,a0
-		move.l  #(256<<6)+(320>>4),d0
+		move.l  #(768<<6)+(320>>4),d0
 		jsr		BltClr
 
-		cmp.l	#50,DB_LocalFrameCounter
+		cmp.l	#150,DB_LocalFrameCounter
 		ble.s	.doMorph
-		cmp.l	#51,DB_LocalFrameCounter
+		cmp.l	#151,DB_LocalFrameCounter
 		beq		.scaleUpCoords
 		cmp.l	#200,DB_LocalFrameCounter
 		beq.s	.addDots1
@@ -146,6 +191,9 @@ DotBall_Run:
 		blo.s	.doRotate
 
 .render:
+		cmp.l	#350,DB_LocalFrameCounter
+		bge.s	.sideScale
+.render2:
 		jsr		WaitBlitter
 		bsr		DB_RenderDots
 
@@ -154,7 +202,7 @@ DotBall_Run:
 		rts
 
 .doMorph:
-		cmp.w	#32,DB_CurrentMorphStep
+		cmp.w	#128,DB_CurrentMorphStep
 		beq.s	.morphDone
 		addq.w	#1,DB_CurrentMorphStep
 		bsr		DB_MorphDots
@@ -176,21 +224,38 @@ DotBall_Run:
 
 .addDots2:
 		add.w	#DB_InitialDots-2,DB_DotCount
-		; bra.s	.doRotate
 
 .doRotate:
 		; Rotate
 		bsr		DB_RotateDots
+
 		addq.w	#4,DB_Angles
 		addq.w	#6,DB_Angles+2
 		add.w	#2,DB_Angles+4
 		bra.s	.render
 
+.sideScale:
+		lea.l	Sintab,a0
+		add.w	#24,DB_ScaleSinIndex
+		move.w	DB_ScaleSinIndex,d0
+		and.w	#$7fe,d0
+		move.w	(a0,d0.w),d0
+		asr.w	#8,d0
+		asr.w	#1,d0
+		move.w	d0,DB_ScaleValue
+
+		bra		.render2
+
+************************************************************
+* Interrupt
+************************************************************
 DotBall_Interrupt:
 		rts
 
 ************************************************************
+*
 * Effect routines
+*
 ************************************************************
 DB_RotateDots:
         lea.l   DB_Angles(pc),a0
@@ -205,17 +270,18 @@ DB_RotateDots:
 .rotate:movem.w (a0)+,d0-d2
         jsr     RotatePoint
 
-		add.w	#256,d2
+		move.w	d2,d3
+		add.w	#256,d3
 
         ; Project x
         ext.l   d0
         asl.l   #7,d0
-        divs    d2,d0
+        divs    d3,d0
 
         ; Project y
         ext.l   d1
         asl.l   #7,d1
-        divs    d2,d1
+        divs    d3,d1
 
 		movem.w	d0-d2,(a1)
 		addq.l	#6,a1
@@ -230,7 +296,10 @@ DB_MorphDots:
 		lea.l	DB_Coords(pc),a2
 		lea.l	DB_RotatedCoords(pc),a3
 
+		lea.l	DB_MorphTable(pc),a4
 		move.w	DB_CurrentMorphStep(pc),d6
+		add.w	d6,d6
+		move.w	(a4,d6.w),d6
 
 		moveq	#DB_InitialDots-1,d7
 .morph:
@@ -240,7 +309,7 @@ DB_MorphDots:
 		sub.w	d1,d0
 
 		muls	d6,d0
-		asr.w	#5,d0
+		asr.w	#6,d0
 		add.w	d1,d0
 
 		move.w	d0,(a2)+
@@ -252,35 +321,74 @@ DB_MorphDots:
 		sub.w	d1,d0
 
 		muls	d6,d0
-		asr.w	#5,d0
+		asr.w	#6,d0
 		add.w	d1,d0
 
 		move.w	d0,(a2)+
 		move.w	d0,(a3)+
 
 		clr.w	(a2)+
-		move.w	#256,(a3)+
+		clr.w	(a3)+
 
 		dbf		d7,.morph
 
 		rts
 
 DB_RenderDots:
+		PUSH	a6
+
         move.l  DrawBuffer,a0
+		lea.l	512*40(a0),a0
         lea.l   DB_RotatedCoords(pc),a1
         lea.l   DB_DotMask,a4
         lea.l   Mulu40,a2
 
+		lea.l	DB_ScaleTablePos(pc),a6
+		move.w	DB_ScaleValue(pc),d6
+		move.w	d6,d0
+		asl.w	#8,d0
+		lea.l	(a6,d0.w),a6
+
         move	DB_DotCount(pc),d7
 		subq.w	#1,d7
-.renderBlock:
+.render:
         move.w  (a1)+,d2
+
+		cmp.w	#0,d6
+		beq.s	.scaleDone
+		bge.s	.testScaleRight
+		cmp.w	#0,d2
+		bge.s	.scaleDone
+		neg.w	d2
+		add.w	d2,d2
+		move.w	(a6,d2.w),d2
+		bra.s	.scaleDone
+
+.testScaleRight
+		cmp.w	#0,d6
+		bmi.s	.scaleDone
+		cmp.w	#0,d2
+		bmi.s	.scaleDone
+		add.w	d2,d2
+		move.w	(a6,d2.w),d2
+
+.scaleDone:
         add.w   #160-8,d2
         move.w  d2,d4
         move.w  (a1)+,d3
 
-		move.w	(a1)+,d1
-		and.w	#7<<6,d1
+		move.w	(a1)+,d1 
+		asr.w	#5,d1
+		add.w	#6,d1
+		
+		cmp.w	#0,d1
+		bge.s	.ok1
+		moveq	#0,d1
+.ok1:	cmp.w	#9,d1
+		ble.s	.ok2
+		moveq	#9,d1
+.ok2:	
+		lsl.w	#6,d1
 
         add.w   #128-8,d3
         lsr.w   #3,d2
@@ -298,6 +406,16 @@ DB_RenderDots:
 
         lea.l   (a0,d3.w),a5
 
+		; Add shading
+		lsr.w	#6,d1
+		cmp.w	#2,d1
+		ble.b	.renderDot
+		lea.l	-256*40(a5),a5
+		cmp.w	#4,d1
+		ble.b	.renderDot
+		lea.l	-256*40(a5),a5
+
+.renderDot:
 I       SET     0
         REPT    16
         move.l  (a3)+,d5
@@ -305,30 +423,55 @@ I       SET     0
 I       SET     I+40
         ENDR
 
-        dbf     d7,.renderBlock
+        dbf     d7,.render
 
+		POP		a6
 		rts
 
 ************************************************************
+*
 * Variables and data
+*
 ************************************************************
 		even
 DB_LocalFrameCounter:		dc.l	0
 
 DB_DotCount:				dc.w	DB_InitialDots
 DB_CurrentMorphStep:		dc.w	0
+DB_MorphTable:				dc.w    0, 0, 0, 0, 0, 0, 0, 0
+							dc.w    0, 0, 0, 0, 1, 1, 1, 1
+							dc.w    2, 2, 2, 2, 3, 3, 3, 4
+							dc.w    4, 4, 5, 5, 6, 6, 7, 7
+							dc.w    8, 8, 9, 9, 10, 10, 11, 11
+							dc.w    12, 13, 13, 14, 15, 15, 16, 17
+							dc.w    18, 18, 19, 20, 21, 21, 22, 23
+							dc.w    24, 25, 26, 27, 28, 29, 30, 31
+							dc.w    32, 33, 34, 35, 35, 36, 37, 38
+							dc.w    39, 40, 41, 42, 43, 44, 44, 45
+							dc.w    46, 47, 47, 48, 49, 50, 50, 51
+							dc.w    52, 52, 53, 53, 54, 55, 55, 56
+							dc.w    56, 57, 57, 58, 58, 59, 59, 59
+							dc.w    60, 60, 61, 61, 61, 62, 62, 62
+							dc.w    62, 63, 63, 63, 63, 64, 64, 64
+							dc.w    64, 64, 64, 64, 64, 64, 64, 64
+							dc.w	64
 
 DB_Angles:					dc.w	0,0,0
+DB_ScaleValue:				dc.w	0
+DB_ScaleSinIndex:			dc.w	0
 
 DB_InitialPositions:		ds.w	2*20
 DB_TargetPositions:			ds.w	2*20
 
-DB_Coords:					ds.w	3*(DB_InitialDots+(3*(DB_InitialDots-2)))
-DB_RotatedCoords:			ds.w	3*(DB_InitialDots+(3*(DB_InitialDots-2)))
+DB_Coords:					ds.w	3*(DB_InitialDots+(2*(DB_InitialDots-2)))
+DB_RotatedCoords:			ds.w	3*(DB_InitialDots+(2*(DB_InitialDots-2)))
+DB_ScaleTableNeg:			ds.w	128*64
+DB_ScaleTablePos:			ds.w	128*64
 
-DB_DotMask:					ds.l	160*16
 ************************************************************
+*
 * Copper
+*
 ************************************************************
         SECTION DB_Copper, CODE_C
 
@@ -346,11 +489,22 @@ DB_Copper:
 		dc.w	$0100,$0000
 
 		dc.w	$0180,$0123
-		dc.w	$0182,$0fff
+		dc.w	$0182,$0456
+		dc.w	$0184,$0789
+		dc.w	$0186,$09ab
+		dc.w	$0188,$0bcd
+		dc.w	$018a,$0cde
+		dc.w	$018c,$0def
+		dc.w	$018e,$0fff
 
-        dc.w    $0100,$1200
+        dc.w    $0100,$3200
 DB_BplPtrs:
 		dc.w	$00e0,$0000,$00e2,$0000
+		dc.w	$00e4,$0000,$00e6,$0000
+		dc.w	$00e8,$0000,$00ea,$0000
 
 		dc.w	$ffff,$fffe
 		dc.w	$ffff,$fffe
+
+
+DB_DotMask:					ds.l	160*16

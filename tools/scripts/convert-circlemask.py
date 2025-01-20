@@ -19,7 +19,7 @@ with Image.open("data/graphics/circle_mask_2_16x160.png").convert('L') as im:
     pix_data = list(im.getdata())
 
     w = 16
-    h = 120
+    h = 160
 
     out_data = bytearray((w*2)*h>>3)
     for i in range(w*h>>4):

@@ -6,7 +6,7 @@
 	
 ********** Flags **************
 PLAY_MUSIC = 0
-SHOW_RASTER = 1
+SHOW_RASTER = 10
 
 ********** Constants **********
 w		= 320
@@ -144,6 +144,7 @@ VBint:
 	include	"common/shadetable.s"
 	include	"common/math.s"
 	include	"common/textwriter_line.s"
+	include "common/textwriter_word.s"
 
 	include "common/LightSpeedPlayer_cia.asm"
 	include "common/LightSpeedPlayer.asm"
@@ -154,13 +155,13 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(10+17)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
-			dc.l	(4+27)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
-			dc.l	(20+31)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
-			dc.l	(20+51)*50, BigDots_Init, BigDots_Run, BigDots_Interrupt
+			dc.l	20*50, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
+			; dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			; dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			; dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			; dc.l	(10+17)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			; dc.l	(4+27)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			; dc.l	(35+31)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
   			dc.l	-1,-1
 EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
@@ -186,7 +187,7 @@ I			SET		I+40
 	include	"parts/credits.s"
 	include	"parts/logo.s"
 	include	"parts/transition_to_scroller.s"
-	include "parts/big_dots.s"
+	include "parts/word_writer.s"
 	include "parts/dot_ball.s"
 
 *******************************************************************************
