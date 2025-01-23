@@ -7,7 +7,7 @@ DR_NrRows       = 4
 DotRemove_Init:
 	lea.l	$dff000,a6
 
-	move.l	DrawBuffer,a0
+	move.l	ViewBuffer,a0
         move.l  #(256<<6)+(320>>4),d0
         jsr	BltClr
 	jsr	WaitBlitter
@@ -21,7 +21,7 @@ DotRemove_Init:
         move.l  #-1,(a1)+
         dbf     d7,.fill
 
-        move.l  DrawBuffer,a0
+        move.l  ViewBuffer,a0
 	lea	DR_BplPtrs+2,a1
         moveq   #0,d0
 	moveq	#1-1,d1

@@ -16,13 +16,15 @@ DotBall_Init:
 		lea.l	$dff000,a6
 
 		move.l	DrawBuffer,a0
-        move.l  #(768<<6)+(320>>4),d0
+        ; move.l  #(768<<6)+(320>>4),d0
+        move.l  #((192*3)<<6)+(320>>4),d0
         jsr		BltClr
 		jsr		WaitBlitter
 
         move.l  DrawBuffer,a0
 		lea		DB_BplPtrs+2,a1
-        move.l	#320*256>>3,d0
+        ; move.l	#320*256>>3,d0
+        move.l	#320*192>>3,d0
 		moveq	#3-1,d1
 		jsr		SetBpls
 
@@ -171,12 +173,14 @@ DotBall_Run:
 
 		move.l	a3,a0
 		lea		DB_BplPtrs+2,a1
-		move.l	#320*256>>3,d0
+		; move.l	#320*256>>3,d0
+		move.l	#320*192>>3,d0
 		moveq	#3-1,d1
 		jsr		SetBpls
 
 		move.l	a2,a0
-		move.l  #(768<<6)+(320>>4),d0
+		; move.l  #(768<<6)+(320>>4),d0
+		move.l  #((192*3)<<6)+(320>>4),d0
 		jsr		BltClr
 
 		cmp.l	#150,DB_LocalFrameCounter
@@ -185,14 +189,14 @@ DotBall_Run:
 		beq		.scaleUpCoords
 		cmp.l	#200,DB_LocalFrameCounter
 		beq.s	.addDots1
-		cmp.l	#300,DB_LocalFrameCounter
+		cmp.l	#250,DB_LocalFrameCounter
 		beq.s	.addDots2
 		cmp.l	#1000,DB_LocalFrameCounter
 		blo.s	.doRotate
 
 .render:
-		cmp.l	#350,DB_LocalFrameCounter
-		bge.s	.sideScale
+		; cmp.l	#350,DB_LocalFrameCounter
+		; bge.s	.sideScale
 .render2:
 		jsr		WaitBlitter
 		bsr		DB_RenderDots
@@ -226,13 +230,24 @@ DotBall_Run:
 		add.w	#DB_InitialDots-2,DB_DotCount
 
 .doRotate:
+		move.l	DB_BallCenterXTablePtr(pc),a0
+		moveq	#0,d0
+		move.w	(a0),d0
+		cmp.w	#-1,d0
+		beq.s	.moveDone
+		cmp.l	DB_LocalFrameCounter(pc),d0
+		bne.s	.moveDone
+		move.w	2(a0),DB_BallCenterX
+		addq.l	#4,DB_BallCenterXTablePtr
+
+.moveDone:
 		; Rotate
 		bsr		DB_RotateDots
 
-		addq.w	#4,DB_Angles
-		addq.w	#6,DB_Angles+2
-		add.w	#2,DB_Angles+4
-		bra.s	.render
+		addq.w	#8,DB_Angles
+		add.w	#12,DB_Angles+2
+		addq.w	#4,DB_Angles+4
+		bra		.render
 
 .sideScale:
 		lea.l	Sintab,a0
@@ -270,18 +285,22 @@ DB_RotateDots:
 .rotate:movem.w (a0)+,d0-d2
         jsr     RotatePoint
 
-		move.w	d2,d3
-		add.w	#256,d3
+		; move.w	d2,d3
+		; add.w	#256,d3
 
         ; Project x
         ext.l   d0
-        asl.l   #7,d0
-        divs    d3,d0
+        ; asl.l   #7,d0
+        ; ; divs    d3,d0
+		; asr.l	#8,d0
+		asr.l	#1,d0
 
         ; Project y
         ext.l   d1
-        asl.l   #7,d1
-        divs    d3,d1
+        ; asl.l   #7,d1
+        ; ; divs    d3,d1
+		; asr.l	#7,d1
+		asr.l	#1,d1
 
 		movem.w	d0-d2,(a1)
 		addq.l	#6,a1
@@ -338,7 +357,8 @@ DB_RenderDots:
 		PUSH	a6
 
         move.l  DrawBuffer,a0
-		lea.l	512*40(a0),a0
+		; lea.l	512*40(a0),a0
+		lea.l	(192*2)*40(a0),a0
         lea.l   DB_RotatedCoords(pc),a1
         lea.l   DB_DotMask,a4
         lea.l   Mulu40,a2
@@ -348,6 +368,9 @@ DB_RenderDots:
 		move.w	d6,d0
 		asl.w	#8,d0
 		lea.l	(a6,d0.w),a6
+
+		move.w	DB_BallCenterX(pc),d0
+		subq.w	#8,d0
 
         move	DB_DotCount(pc),d7
 		subq.w	#1,d7
@@ -373,7 +396,8 @@ DB_RenderDots:
 		move.w	(a6,d2.w),d2
 
 .scaleDone:
-        add.w   #160-8,d2
+        ; add.w   #160-8,d2
+		add.w	d0,d2
         move.w  d2,d4
         move.w  (a1)+,d3
 
@@ -390,12 +414,23 @@ DB_RenderDots:
 .ok2:	
 		lsl.w	#6,d1
 
-        add.w   #128-8,d3
+        ; add.w   #128-8,d3
+        add.w   #(192/2)-8,d3
         lsr.w   #3,d2
         and.w   #$fffe,d2
         and.w   #15,d4
-		mulu	#640,d4
-		
+		; mulu	#640,d4
+		; ext.l	d4
+		; ; moveq	#9,d0
+		; move.w	d4,d5
+		; lsl.l	#8,d4
+		; lsl.l	#1,d4
+		; lsl.w	#7,d5
+		; add.l	d5,d4
+		add.w	d4,d4
+		add.w	#512,d4
+		move.w	(a2,d4.w),d4
+
 		add.w	d1,d4
 		lea.l	(a4,d4.w),a3
 
@@ -410,16 +445,19 @@ DB_RenderDots:
 		lsr.w	#6,d1
 		cmp.w	#2,d1
 		ble.b	.renderDot
-		lea.l	-256*40(a5),a5
+		; lea.l	-256*40(a5),a5
+		lea.l	-192*40(a5),a5
 		cmp.w	#4,d1
 		ble.b	.renderDot
-		lea.l	-256*40(a5),a5
+		; lea.l	-256*40(a5),a5
+		lea.l	-192*40(a5),a5
 
 .renderDot:
 I       SET     0
         REPT    16
         move.l  (a3)+,d5
         or.l    d5,I(a5)
+		; or.l	#$ff,I(a5)
 I       SET     I+40
         ENDR
 
@@ -460,6 +498,29 @@ DB_Angles:					dc.w	0,0,0
 DB_ScaleValue:				dc.w	0
 DB_ScaleSinIndex:			dc.w	0
 
+DB_BallCenterX:				dc.w	160
+DB_BallCenterXTablePtr:		dc.l	DB_BallCenterXTable
+
+DB_BEAT = 24
+DB_BallCenterXTable:		dc.w	300,160-64
+							dc.w	300+(DB_BEAT*1),160
+							dc.w	300+(DB_BEAT*2),160+64
+							dc.w	300+(DB_BEAT*3),160-64
+							dc.w	300+(DB_BEAT*4),160+64
+							dc.w	300+(DB_BEAT*5),160
+							dc.w	300+(DB_BEAT*10),160-64
+							dc.w	300+(DB_BEAT*11),160-32
+							dc.w	300+(DB_BEAT*12),160
+							dc.w	300+(DB_BEAT*13),160+32
+							dc.w	300+(DB_BEAT*14),160+64
+							dc.w	300+(DB_BEAT*15),160
+							dc.w	300+(DB_BEAT*20),160-64
+							dc.w	300+(DB_BEAT*21),160+64
+							dc.w	300+(DB_BEAT*22),160-32
+							dc.w	300+(DB_BEAT*23),160+32
+							dc.w	300+(DB_BEAT*24),160
+							dc.w	-1
+
 DB_InitialPositions:		ds.w	2*20
 DB_TargetPositions:			ds.w	2*20
 
@@ -488,7 +549,7 @@ DB_Copper:
 		dc.w	$010a,$0000
 		dc.w	$0100,$0000
 
-		dc.w	$0180,$0123
+		dc.w	$0180,$0012
 		dc.w	$0182,$0456
 		dc.w	$0184,$0789
 		dc.w	$0186,$09ab
@@ -497,11 +558,19 @@ DB_Copper:
 		dc.w	$018c,$0def
 		dc.w	$018e,$0fff
 
-        dc.w    $0100,$3200
 DB_BplPtrs:
 		dc.w	$00e0,$0000,$00e2,$0000
 		dc.w	$00e4,$0000,$00e6,$0000
 		dc.w	$00e8,$0000,$00ea,$0000
+
+		dc.b	$2c+32,$01
+		dc.w	$fffe
+        dc.w    $0100,$3200
+
+		dc.l	$ffdffffe
+		dc.b	$2c+32+192-256,$01
+		dc.w	$fffe
+        dc.w    $0100,$0200
 
 		dc.w	$ffff,$fffe
 		dc.w	$ffff,$fffe

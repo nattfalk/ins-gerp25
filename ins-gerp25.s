@@ -5,8 +5,8 @@
 	INCLUDE "common/startup.s"
 	
 ********** Flags **************
-PLAY_MUSIC = 0
-SHOW_RASTER = 10
+PLAY_MUSIC = 1
+SHOW_RASTER = 0
 
 ********** Constants **********
 w		= 320
@@ -155,13 +155,13 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	20*50, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
-			; dc.l	2*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			; dc.l	(6+2)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			; dc.l	(9+8)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			; dc.l	(10+17)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
-			; dc.l	(4+27)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
-			; dc.l	(35+31)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			dc.l	15*50+25, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
+			dc.l	(2+15)*50+25, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			dc.l	(6+17)*50+25, Logo_Init, Logo_Run, Logo_Interrupt
+			dc.l	(12+23)*50+20, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			dc.l	(22+32)*50+25, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			dc.l	(4+54)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			dc.l	(35+58)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
   			dc.l	-1,-1
 EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
@@ -173,6 +173,12 @@ I			SET		0
 			REPT	256
 			dc.w	I
 I			SET		I+40
+			ENDR
+
+I			SET		0
+			REPT	16
+			dc.w	I
+I			SET		I+640
 			ENDR
 			dcb.w	100,0
 
@@ -226,13 +232,13 @@ MainBplCon:
 
 
 				dcb.b	40000
-LSPBank:		incbin	"data/music/new highscore.lsbank"
+LSPBank:		incbin	"data/music/prospectives.lsbank"
 
 BlankLine:      dcb.b   40,0
 
 	SECTION	VariousData,DATA
 
-LSPMusic:		incbin	"data/music/new highscore.lsmusic"
+LSPMusic:		incbin	"data/music/prospectives.lsmusic"
 Font:			incbin	"data/graphics/vedderfont5.8x520.1.raw"
 DotMask:		incbin	"data/graphics/circle_mask_2_32x160x1.raw"
 
