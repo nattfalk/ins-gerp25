@@ -17,15 +17,31 @@ HorizontalStrips_Init:
         swap    d0
         move.w  d0,2(a1)
         adda.l  #40,a0
-        adda.l  #12,a1
+        adda.l  #16,a1
         dbf     d7,.setBpls
+
+        lea.l   HS_ShadeTable(pc),a0
+        move.w  #$0012,d0
+        move.w  #$0fff,d1
+        move.w  #74,d2
+        jsr     CreateShadeTable
 
     	move.l	#HS_Copper,$80(a6)
         rts
 
 ************************************************************
 HorizontalStrips_Run:
+        ; Set shade
+        lea.l   HS_BplPtrs,a0
+        lea.l   HS_ShadeTablePtrs(pc),a1
+        moveq   #4-1,d7
+.setColor:
+        move.l  (a1)+,a2
+        move.w  (a2),10(a0)
+        lea.l   16(a0),a0
+        dbf     d7,.setColor
 
+        ; Draw bars
         move.l  DrawBuffer,a0
 
         lea.l   HS_EaseInLeftToRight,a1
@@ -76,7 +92,7 @@ HorizontalStrips_Run:
 .next2:
         lea.l   80(a0),a0
         dbf     d7,.outerLoop
-
+.done:
         rts
 
 ************************************************************
@@ -86,6 +102,7 @@ HorizontalStrips_Interrupt:
         cmp.w   #74*2,HS_Index
         beq.s   .bar1done
         addq.w  #2,HS_Index
+        add.l   #2,HS_ShadeTablePtrs
 .bar1done:
 
         cmp.l   #5,HS_LocalFrameCounter
@@ -93,6 +110,7 @@ HorizontalStrips_Interrupt:
         cmp.w   #74*2,HS_Index+2
         beq.s   .bar2done
         addq.w  #2,HS_Index+2
+        add.l   #2,HS_ShadeTablePtrs+4
 .bar2done:
 
         cmp.l   #10,HS_LocalFrameCounter
@@ -100,6 +118,7 @@ HorizontalStrips_Interrupt:
         cmp.w   #74*2,HS_Index+4
         beq.s   .bar3done
         addq.w  #2,HS_Index+4
+        add.l   #2,HS_ShadeTablePtrs+8
 .bar3done:
 
         cmp.l   #15,HS_LocalFrameCounter
@@ -107,6 +126,7 @@ HorizontalStrips_Interrupt:
         cmp.w   #74*2,HS_Index+6
         beq.s   .bar4done
         addq.w  #2,HS_Index+6
+        add.l   #2,HS_ShadeTablePtrs+12
 .bar4done:
 
 .skip:
@@ -142,6 +162,11 @@ HS_EaseInRightToLeft:
         dc.w    20, 18, 16, 14, 12, 11, 9, 8
         dc.w    6, 5, 4, 3, 2, 2, 1, 0
         dc.w    0, 0, 0
+HS_ShadeTable:
+        ds.w    74
+        dcb.w   8,$fff
+HS_ShadeTablePtrs:
+        dc.l    HS_ShadeTable,HS_ShadeTable,HS_ShadeTable,HS_ShadeTable
 
 ************************************************************
         SECTION HS_Copper, CODE_C
@@ -159,21 +184,21 @@ HS_Copper:
         dc.w    $0100,$0200
 
 	dc.w	$0180,$0012
-	dc.w	$0182,$0fff
+	dc.w	$0182,$0012
 
         dc.w    $8c01,$fffe
         dc.w    $0100,$1200
 HS_BplPtrs:
-	dc.w	$00e0,$0000,$00e2,$0000
+	dc.w	$00e0,$0000,$00e2,$0000,$0182,$0012
         dc.b    $8c+16,$01
         dc.w    $fffe
-	dc.w	$00e0,$0000,$00e2,$0000
+	dc.w	$00e0,$0000,$00e2,$0000,$0182,$0012
         dc.b    $8c+32,$01
         dc.w    $fffe
-	dc.w	$00e0,$0000,$00e2,$0000
+	dc.w	$00e0,$0000,$00e2,$0000,$0182,$0012
         dc.b    $8c+48,$01
         dc.w    $fffe
-	dc.w	$00e0,$0000,$00e2,$0000
+	dc.w	$00e0,$0000,$00e2,$0000,$0182,$0012
 
         dc.b    $8c+64,$01
         dc.w    $fffe

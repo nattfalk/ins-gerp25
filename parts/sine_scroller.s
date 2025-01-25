@@ -365,7 +365,7 @@ SS_CustomSinTab:	ds.w	1024
 SS_Text:			
 					dc.b	'****************************************'
 					dc.b	'        -INSANE-        AT GERP 2025    '
-					dc.b	'    WITH LOVE AND INSANITY'
+					dc.b	'    WITH LOVE AND HEXTJOGLAD'
 					dc.b	'                                         ',0
 					even
 SS_TextPtr:			dc.l	SS_Text

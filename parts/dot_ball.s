@@ -514,11 +514,11 @@ DB_BallCenterXTable:		dc.w	300,160-64
 							dc.w	300+(DB_BEAT*13),160+32
 							dc.w	300+(DB_BEAT*14),160+64
 							dc.w	300+(DB_BEAT*15),160
-							dc.w	300+(DB_BEAT*20),160-64
-							dc.w	300+(DB_BEAT*21),160+64
-							dc.w	300+(DB_BEAT*22),160-32
-							dc.w	300+(DB_BEAT*23),160+32
-							dc.w	300+(DB_BEAT*24),160
+							dc.w	300+(DB_BEAT*18),160-64
+							dc.w	300+(DB_BEAT*19),160+64
+							dc.w	300+(DB_BEAT*20),160-32
+							dc.w	300+(DB_BEAT*21),160+32
+							dc.w	300+(DB_BEAT*22),160
 							dc.w	-1
 
 DB_InitialPositions:		ds.w	2*20

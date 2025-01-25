@@ -1,15 +1,16 @@
 ************************************************************
+*
+* Main routines
+*
+************************************************************
         SECTION Logo, CODE_P
 
+************************************************************
+* Initialize
+************************************************************
 Logo_Init:
 	lea.l	$dff000,a6
 
-	; move.l	DrawBuffer,a0
-        ; move.l  #(256<<6)+(320>>4),d0
-        ; jsr	BltClr
-	; jsr	WaitBlitter
-
-        ; move.l  DrawBuffer,a0
         lea.l   L_Logo,a0
         lea.l   L_BplPtrs,a1
         moveq   #4-1,d7
@@ -41,22 +42,14 @@ Logo_Init:
         dbf     d7,.setCols
 
     	move.l	#L_Copper,$80(a6)
-
+        
         jsr     InitFade
-
-;         lea.l   L_LogoPal,a0
-;         lea.l   L_CopCols,a1
-;         moveq   #32-1,d7
-; .setCols:
-;         move.w  (a0)+,2(a1)
-;         addq.l  #4,a1
-;         dbf     d7,.setCols
-
         rts
 
 ************************************************************
+* Run
+************************************************************
 Logo_Run:
-
         cmp.w   #0,L_FadeStage
         bne.s   .nextFade
         lea.l   L_LogoFromPal(pc),a0
@@ -69,7 +62,7 @@ Logo_Run:
 
 .nextFade:
         lea.l   L_LogoPal(pc),a0
-        lea.l   L_LogoFromPal(pc),a1
+        lea.l   L_LogoToPal(pc),a1
         lea.l   L_CopCols+(16*4),a2
         moveq   #25,d0
         moveq   #16-1,d1
@@ -77,6 +70,8 @@ Logo_Run:
 
 .done:  rts
 
+************************************************************
+* Interrupt
 ************************************************************
 Logo_Interrupt:
         addq.l  #1,L_LocalFrameCounter
@@ -91,13 +86,22 @@ Logo_Interrupt:
         rts
 
 ************************************************************
+*
+* Variables and data
+*
+************************************************************
         even
 L_LocalFrameCounter:    dc.l    0
 L_FadeStage:            dc.w    0
 
-L_LogoFromPal:  dcb.w   32,$fff
+L_LogoFromPal:  dcb.w   32,$0fff
+L_LogoToPal:    dcb.w   32,$0012
 L_LogoPal:      incbin	"data/graphics/logo-320x64x4.pal"
 
+************************************************************
+*
+* Copper and data
+*
 ************************************************************
         SECTION L_Copper, DATA_C
 L_Copper:
@@ -116,8 +120,6 @@ L_Copper:
 	dc.w	$0180,$0012
 
         dc.w    $8c01,$fffe
-
-        ; dc.w    $8c01,$fffe
 
 L_BplPtrs:
 	dc.w	$00e0,$0000,$00e2,$0000

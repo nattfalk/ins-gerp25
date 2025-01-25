@@ -157,11 +157,14 @@ ViewBuffer:		dc.l	Screen
 EffectsTable:		
 			dc.l	15*50+25, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
 			dc.l	(2+15)*50+25, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	(6+17)*50+25, Logo_Init, Logo_Run, Logo_Interrupt
+			dc.l	(3+17)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			dc.l	(3+20)*50+25, LowresKidsImage_Init, LowresKidsImage_Run, LowresKidsImage_Interrupt
 			dc.l	(12+23)*50+20, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(22+32)*50+25, DotBall_Init, DotBall_Run, DotBall_Interrupt
-			dc.l	(4+54)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
-			dc.l	(35+58)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			dc.l	(22+31)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			dc.l	(26+53)*50, WordChanger_Init_Credits, WordChanger_Run_Credits, WordChanger_Interrupt
+			dc.l	(4+79)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			dc.l	(30+83)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			dc.l	(65+113)*50, WordChanger_Init_Greetings, WordChanger_Run_Greetings, WordChanger_Interrupt
   			dc.l	-1,-1
 EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
@@ -195,6 +198,8 @@ I			SET		I+640
 	include	"parts/transition_to_scroller.s"
 	include "parts/word_writer.s"
 	include "parts/dot_ball.s"
+	include "parts/word_changer.s"
+	include "parts/lowreskids_image.s"
 
 *******************************************************************************
 	SECTION ChipData,DATA_C
@@ -235,6 +240,10 @@ MainBplCon:
 LSPBank:		incbin	"data/music/prospectives.lsbank"
 
 BlankLine:      dcb.b   40,0
+
+				dcb.b	65*2*4*3,0
+BigFont:        incbin	"data/graphics/font_32x65_1751x3.raw"
+				dcb.b	65*2*4*3,0
 
 	SECTION	VariousData,DATA
 
