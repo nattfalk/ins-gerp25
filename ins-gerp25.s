@@ -155,16 +155,18 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	15*50+25, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
-			dc.l	(2+15)*50+25, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	(3+17)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			dc.l	(3+20)*50+25, LowresKidsImage_Init, LowresKidsImage_Run, LowresKidsImage_Interrupt
-			dc.l	(12+23)*50+20, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(22+31)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
-			dc.l	(26+53)*50, WordChanger_Init_Credits, WordChanger_Run_Credits, WordChanger_Interrupt
-			dc.l	(4+79)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
-			dc.l	(30+83)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
-			dc.l	(65+113)*50, WordChanger_Init_Greetings, WordChanger_Run_Greetings, WordChanger_Interrupt
+			dc.l	15*50, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
+			dc.l	(2+15)*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			dc.l	(2+17)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			dc.l	(3+20)*50, LowresKidsImage_Init, LowresKidsImage_Run, LowresKidsImage_Interrupt
+			dc.l	(12+23)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			dc.l	(11+35)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			dc.l	(8+46)*50, ErrolImage_Init, ErrolImage_Run, ErrolImage_Interrupt
+			dc.l	(8+54)*50, DotBall_InitReturn, DotBall_Run, DotBall_Interrupt
+			dc.l	(26+65)*50, WordChanger_Init_Credits, WordChanger_Run_Credits, WordChanger_Interrupt
+			dc.l	(4+91)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
+			dc.l	(30+95)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
+			dc.l	(65+125)*50, WordChanger_Init_Greetings, WordChanger_Run_Greetings, WordChanger_Interrupt
   			dc.l	-1,-1
 EffectsPointer:		dc.l	EffectsTable
 EffectsInitPointer:	dc.l	EffectsTable+4
@@ -185,9 +187,6 @@ I			SET		I+640
 			ENDR
 			dcb.w	100,0
 
-; FromPalette:		dc.w	$000,$000,$000,$000
-; ToPalette:			dc.w	$158,$fff,$fff,$158
-
 	include	"include/sintab.i"
 
 	include "parts/horizontal_strips.s"
@@ -200,6 +199,7 @@ I			SET		I+640
 	include "parts/dot_ball.s"
 	include "parts/word_changer.s"
 	include "parts/lowreskids_image.s"
+	include "parts/errol_image.s"
 
 *******************************************************************************
 	SECTION ChipData,DATA_C
@@ -235,21 +235,17 @@ MainBplCon:
 
 ******************************************************
 
-
-				dcb.b	40000
-LSPBank:		incbin	"data/music/prospectives.lsbank"
-
 BlankLine:      dcb.b   40,0
-
 				dcb.b	65*2*4*3,0
 BigFont:        incbin	"data/graphics/font_32x65_1751x3.raw"
 				dcb.b	65*2*4*3,0
+LSPBank:		incbin	"data/music/prospectives(final).lsbank"
 
-	SECTION	VariousData,DATA
+	SECTION	VariousData,DATA_P
 
-LSPMusic:		incbin	"data/music/prospectives.lsmusic"
 Font:			incbin	"data/graphics/vedderfont5.8x520.1.raw"
 DotMask:		incbin	"data/graphics/circle_mask_2_32x160x1.raw"
+LSPMusic:		incbin	"data/music/prospectives(final).lsmusic"
 
 *******************************************************************************
 	SECTION ChipBuffers,BSS_C
@@ -257,6 +253,7 @@ DotMask:		incbin	"data/graphics/circle_mask_2_32x160x1.raw"
 			even
 Screen:		ds.b	h*bwid*5
 Screen2:	ds.b	h*bwid*5
+ChipBuf:	ds.b	h*bwid*5
 
 QuadsMask:	ds.b	h*bwid
 

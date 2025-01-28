@@ -12,6 +12,13 @@ LowresKidsImage_Init:
 	lea.l	$dff000,a6
 
         lea.l   LKI_Image,a0
+        lea.l   ChipBuf,a1
+        move.l  #(320*256*4)>>5-1,d7
+.copyImage:
+        move.l  (a0)+,(a1)+
+        dbf     d7,.copyImage
+
+        lea.l   ChipBuf,a0
         lea.l   LKI_BplPtrs,a1
         moveq   #4-1,d7
 .setBpls:
@@ -43,7 +50,7 @@ LowresKidsImage_Run:
         rts
 
 .fadeIn:
-        lea.l   LKI_ImageFadePal(pc),a0
+        lea.l   LKI_ImageFadePalFrom(pc),a0
         lea.l   LKI_ImagePal(pc),a1
         lea.l   LKI_CopCols,a2
         moveq   #25,d0
@@ -53,9 +60,9 @@ LowresKidsImage_Run:
 
 .fadeOut:
         lea.l   LKI_ImagePal(pc),a0
-        lea.l   LKI_ImageFadePal(pc),a1
+        lea.l   LKI_ImageFadePalTo(pc),a1
         lea.l   LKI_CopCols,a2
-        moveq   #25,d0
+        moveq   #50,d0
         moveq   #16-1,d1
         jsr     Fade
         bra.s   .done
@@ -76,11 +83,12 @@ LowresKidsImage_Interrupt:
 *
 ************************************************************
         even
-LKI_LocalFrameCounter:    dc.l    0
-LKI_FadeStage:            dc.w    0
+LKI_LocalFrameCounter:  dc.l    0
+LKI_FadeStage:          dc.w    0
 
-LKI_ImageFadePal:          dcb.w   32,$0012
-LKI_ImagePal:              incbin  "data/graphics/lowres_kids_320x256x4.pal"
+LKI_ImageFadePalFrom:   dcb.w   32,$0012
+LKI_ImageFadePalTo:     dcb.w   32,$0fff
+LKI_ImagePal:           incbin  "data/graphics/lowres_kids_320x256x4.pal"
 
 ************************************************************
 *
@@ -122,4 +130,7 @@ LKI_CopCols:
 	dc.w	$ffff,$fffe
 	dc.w	$ffff,$fffe
 
+        SECTION LKI_ChipData, DATA_P
+
+                even
 LKI_Image:	incbin	"data/graphics/lowres_kids_320x256x4.raw"

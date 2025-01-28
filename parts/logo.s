@@ -12,6 +12,13 @@ Logo_Init:
 	lea.l	$dff000,a6
 
         lea.l   L_Logo,a0
+        lea.l   ChipBuf,a1
+        move.l  #(320*64*4)>>5-1,d7
+.copyImage:
+        move.l  (a0)+,(a1)+
+        dbf     d7,.copyImage
+
+        lea.l   ChipBuf,a0
         lea.l   L_BplPtrs,a1
         moveq   #4-1,d7
 .setBpls:
@@ -76,10 +83,8 @@ Logo_Run:
 Logo_Interrupt:
         addq.l  #1,L_LocalFrameCounter
 
-        cmp.l   #80,L_LocalFrameCounter
-        bmi.s   .skip
-        cmp.l   #90,L_LocalFrameCounter
-        bgt     .skip
+        cmp.l   #70,L_LocalFrameCounter
+        bne     .skip
         jsr     InitFade
         move.w  #1,L_FadeStage
 .skip:
@@ -146,4 +151,7 @@ L_CopCols:
 	dc.w	$ffff,$fffe
 	dc.w	$ffff,$fffe
 
+        SECTION L_ChipData, DATA_P
+
+        even
 L_Logo:	incbin	"data/graphics/logo-320x64x4.raw"

@@ -17,6 +17,7 @@ WordChanger_Init_Credits:
         bra.s   WordChanger_Init
 
 WordChanger_Init_Greetings:
+        move.w  #5,WC_FadeStep
         clr.l   WC_LocalFrameCounter
         move.l  #WC_Words_Greetings,WC_WordsPtr
 
@@ -24,13 +25,13 @@ WordChanger_Init:
 	lea.l	$dff000,a6
 
 	move.l	DrawBuffer,a0
-        move.l  #(768<<6)+(320>>4),d0
+        move.l  #((256*4)<<6)+(320>>4),d0
         jsr	BltClr
 	jsr	WaitBlitter
 
         move.l  DrawBuffer,a0
         lea.l   WC_BplPtrs,a1
-        moveq   #3-1,d7
+        moveq   #4-1,d7
 .setBpls:
         move.l  a0,d0
         move.w  d0,6(a1)
@@ -40,13 +41,19 @@ WordChanger_Init:
         adda.l  #8,a1
         dbf     d7,.setBpls
 
-        lea.l   WC_FontPal+2(pc),a0
-        lea.l   WC_CopCols,a1
-        moveq   #7-1,d7
-.setColor:
-        move.w  (a0)+,2(a1)
-        adda.l  #4,a1
-        dbf     d7,.setColor
+        move.l  DrawBuffer,a0
+        lea.l   (768*40)+((128-33)*40)(a0),a0
+        move.l  #65*10-1,d7
+.fill:  move.l  #$ffffffff,(a0)+
+        dbf     d7,.fill
+
+;         lea.l   WC_FontPal+2(pc),a0
+;         lea.l   WC_CopCols,a1
+;         moveq   #7-1,d7
+; .setColor:
+;         move.w  (a0)+,2(a1)
+;         adda.l  #4,a1
+;         dbf     d7,.setColor
 
     	move.l	#WC_Copper,$80(a6)
 
@@ -64,6 +71,54 @@ WordChanger_Init:
 * Run
 ************************************************************
 WordChanger_Run_Credits:
+        cmp.w   #0,WC_FadeStep
+        bne.s   .fadeIn
+        jsr     InitFade
+        move.w  #1,WC_FadeStep
+.fadeIn:
+        cmp.w   #1,WC_FadeStep
+        bne.s   .fadeWait
+        lea.l   WC_FromPal(pc),a0
+        lea.l   WC_FontPal+2(pc),a1
+        lea.l   WC_CopCols,a2
+        moveq   #8,d0
+        moveq   #7-1,d1
+        jsr     Fade
+        cmp.w   #9,d0
+        bne.s   .doWords
+        move.l  WC_LocalFrameCounter,WC_FadeWait
+        move.w  #2,WC_FadeStep
+        bra.s   .doWords
+
+.fadeWait:
+        cmp.w   #2,WC_FadeStep
+        bne.s   .initFadeOut
+        move.l  WC_FadeWait(pc),d0
+        add.l   #10,D0
+        cmp.l   WC_LocalFrameCounter,d0
+        bne.s   .doWords
+        move.w  #3,WC_FadeStep
+        bra.s   .doWords
+
+.initFadeOut:
+        cmp.w   #3,WC_FadeStep
+        bne.s   .fadeOut
+        jsr     InitFade
+        move.w  #4,WC_FadeStep
+.fadeOut:
+        cmp.w   #4,WC_FadeStep
+        bne.s   .doWords
+        lea.l   WC_FontPal+2(pc),a0
+        lea.l   WC_FromPal(pc),a1
+        lea.l   WC_CopCols,a2
+        moveq   #8,d0
+        moveq   #7-1,d1
+        jsr     Fade
+        cmp.w   #9,d0
+        bne.s   .doWords
+        move.w  #5,WC_FadeStep
+
+.doWords:
         move.l  WC_Credits_TimingTablePtr(pc),a0
         move.l  (a0),d0
         cmp.l   #-1,d0
@@ -80,6 +135,54 @@ WordChanger_Run_Credits:
 GREETINGS_ROWS = 45
 TIME_PER_GREET = 70
 WordChanger_Run_Greetings:
+        cmp.w   #0,WC_FadeStep
+        bne.s   .fadeIn
+        jsr     InitFade
+        move.w  #1,WC_FadeStep
+.fadeIn:
+        cmp.w   #1,WC_FadeStep
+        bne.s   .fadeWait
+        lea.l   WC_FromPal(pc),a0
+        lea.l   WC_FontPal+2(pc),a1
+        lea.l   WC_CopCols,a2
+        moveq   #8,d0
+        moveq   #7-1,d1
+        jsr     Fade
+        cmp.w   #9,d0
+        bne.s   .doWords
+        move.l  WC_LocalFrameCounter,WC_FadeWait
+        move.w  #2,WC_FadeStep
+        bra.s   .doWords
+
+.fadeWait:
+        cmp.w   #2,WC_FadeStep
+        bne.s   .initFadeOut
+        move.l  WC_FadeWait(pc),d0
+        add.l   #10,D0
+        cmp.l   WC_LocalFrameCounter,d0
+        bne.s   .doWords
+        move.w  #3,WC_FadeStep
+        bra.s   .doWords
+
+.initFadeOut:
+        cmp.w   #3,WC_FadeStep
+        bne.s   .fadeOut
+        jsr     InitFade
+        move.w  #4,WC_FadeStep
+.fadeOut:
+        cmp.w   #4,WC_FadeStep
+        bne.s   .doWords
+        lea.l   WC_FontPal+2(pc),a0
+        lea.l   WC_FromPal(pc),a1
+        lea.l   WC_CopCols,a2
+        moveq   #8,d0
+        moveq   #7-1,d1
+        jsr     Fade
+        cmp.w   #9,d0
+        bne.s   .doWords
+        move.w  #5,WC_FadeStep
+
+.doWords:
         move.l  WC_TriggerFrame(pc),d0
         cmp.l   #25+(GREETINGS_ROWS*TIME_PER_GREET),d0
         beq.s   .done
@@ -390,14 +493,15 @@ WC_RenderLetters:
         move.w	#0,bltamod(a6)
         move.w	#36,bltdmod(a6)
 
-        lea.l  WC_MovementTablePtr(pc),a0
+        lea.l   WC_MovementTablePtr(pc),a0
         moveq   #0,d0
+        moveq   #0,d2
         moveq   #LETTERS-1,d7
 .print:
         move.l  (a0),a1
         move.w  (a1),d1
         cmp.w   #-1000,d1
-        beq.s   .next
+        beq.s   .onTarget
         addq.l  #2,(a0)
 
         muls    #12,d1
@@ -413,9 +517,22 @@ WC_RenderLetters:
         move.w	#(768<<HSIZEBITS)|2,bltsize(a6)
         WAITBLIT
 
-.next:  addq.w  #4,d0
+        addq.w  #4,d0
         addq.l  #4,a0
+        bra.s   .next
+.onTarget:
+        addq.w  #4,d0
+        addq.l  #4,a0
+        addq.w  #1,d2
+.next:
         dbf     d7,.print
+
+        cmp.w   #LETTERS,d2
+        bne.s   .done
+        cmp.w   #5,WC_FadeStep
+        bne.s   .done
+
+        clr.w   WC_FadeStep
 
 .done:  rts
 
@@ -428,19 +545,24 @@ WC_RenderLetters:
 WC_LocalFrameCounter:   dc.l    0
 WC_TriggerFrame:        dc.l    25
 
+WC_FromPal:             dc.w	$0222,$0222,$0222
+                        dc.w	$0555,$0666,$0333,$0333
 WC_FontPal:             incbin  "data/graphics/font_32x65_1751x3.PAL"
 
+WC_FadeStep:            dc.w    5
+WC_FadeWait:            dc.l    0
 WC_Credits_TimingTablePtr:
                         dc.l    WC_Credits_TimingTable
 WC_Credits_TimingTable: dc.l    25
-                        dc.l    25+100  ; Code
-                        dc.l    25+230  ; Prospect
-                        dc.l    25+360  ; Music
-                        dc.l    25+500  ; Alpa
-                        dc.l    25+660  ; Gfx
-                        dc.l    25+800  ; Corel
-                        dc.l    25+940  ; Vedder
-                        dc.l    25+1100 ; 
+                        dc.l    25+110  ; Code
+                        dc.l    25+250  ; Prospect
+                        dc.l    25+390  ; Music
+                        dc.l    25+530  ; Alpa
+                        dc.l    25+690  ; Gfx
+                        dc.l    25+850  ; Corel
+                        dc.l    25+960  ; TmX
+                        dc.l    25+1100 ; Vedder
+                        dc.l    25+1240 ; 
                         dc.l    25+1500 ; Insane
                         dc.l    -1
 
@@ -450,56 +572,57 @@ WC_Words_Credits:       dc.b    '@@@@@@@@@@'
                         dc.b    '@@MUSIC@@@'
                         dc.b    '@@@ALPA@@@'
                         dc.b    '@@@@@@@GFX'
-                        dc.b    '@@COREL@@@'
-                        dc.b    '@@VEDDER@@'
+                        dc.b    '@COREL@@@@'
+                        dc.b    '@@@TMX@@@@'
+                        dc.b    '@@@VEDDER@'
                         dc.b    '@@@@@@@@@@'
                         dc.b    '@@INSANE@@'
 
 WC_Words_Greetings:     dc.b    '@@@@@@@@@@'
                         dc.b    'GREETINGS@'
                         dc.b    '@@@@@@@@@@'
+                        dc.b    'SPACEBALLS'
+                        dc.b    'PHENOMENA@'
+                        dc.b    '@LOONIES@@'
+                        dc.b    'NECTARINE@'
+                        dc.b    '@@DESIRE@@'
+                        dc.b    '@SCOOPEX@@'
+                        dc.b    '@@RAZOR@@@'
                         dc.b    'ANDROMEDA@'
                         dc.b    'BITBENDAZ@'
-                        dc.b    '@@DESIRE@@'
-                        dc.b    '@@@@DHS@@@'
                         dc.b    '@EPHIDRENA'
-                        dc.b    '@@@ERROL@@'
-                        dc.b    'FAIRLIGHT@'
-                        dc.b    '@@@FFP@@@@'
-                        dc.b    'FOCUS@DSGN'
-                        dc.b    '@@@@GP@@@@'
                         dc.b    '@@@@HMF@@@'
-                        dc.b    '@@ISTARI@@'
-                        dc.b    '@@@KESO@@@'
-                        dc.b    '@@@LEMON@@'
-                        dc.b    '@LOGICOMA@'
-                        dc.b    '@LOONIES@@'
-                        dc.b    '@NAHKOLOR@'
-                        dc.b    '@@NATURE@@'
-                        dc.b    'NECTARINE@'
-                        dc.b    '@@NEWBEAT@'
-                        dc.b    'NICEPIXEL@'
-                        dc.b    '@@NUKLEUS@'
-                        dc.b    '@@OFFENCE@'
-                        dc.b    '@OUTBREAK@'
-                        dc.b    '@PACIFIC@@'
-                        dc.b    'PHENOMENA@'
-                        dc.b    'PLANETJAZZ'
-                        dc.b    '@@RAZOR@@@'
-                        dc.b    '@REALITY@@'
-                        dc.b    '@@REBELS@@'
-                        dc.b    '@SCENESAT@'
-                        dc.b    '@SCOOPEX@@'
-                        dc.b    'SLAYRADIO@'
+                        dc.b    '@@@ERROL@@'
                         dc.b    '@@@SMFX@@@'
-                        dc.b    'SPACEBALLS'
-                        dc.b    '@@STRUTS@@'
-                        dc.b    '@@@@TEK@@@'
-                        dc.b    '@@@TBL@@@@'
-                        dc.b    '@THEGANG@@'
-                        dc.b    '@@TOLOU@@@'
-                        dc.b    '@TRAKTOR@@'
+                        dc.b    '@PACIFIC@@'
+                        dc.b    '@SCENESAT@'
+                        dc.b    '@@OFFENCE@'
                         dc.b    '@@UPROUGH@'
+                        dc.b    'NICEPIXEL@'
+                        dc.b    '@@TOLOU@@@'
+                        dc.b    'PLANETJAZZ'
+                        dc.b    '@@@@DHS@@@'
+                        dc.b    '@@@@GP@@@@'
+                        dc.b    'SLAYRADIO@'
+                        dc.b    '@THEGANG@@'
+                        dc.b    '@@@TBL@@@@'
+                        dc.b    '@LOGICOMA@'
+                        dc.b    'FAIRLIGHT@'
+                        dc.b    '@@@LEMON@@'
+                        dc.b    '@NAHKOLOR@'
+                        dc.b    '@@@@TEK@@@'
+                        dc.b    '@@STRUTS@@'
+                        dc.b    'FOCUS@DSGN'
+                        dc.b    '@@@FFP@@@@'
+                        dc.b    '@@REBELS@@'
+                        dc.b    '@REALITY@@'
+                        dc.b    '@@NUKLEUS@'
+                        dc.b    '@TRAKTOR@@'
+                        dc.b    '@@NEWBEAT@'
+                        dc.b    '@@NATURE@@'
+                        dc.b    '@@ISTARI@@'
+                        dc.b    '@OUTBREAK@'
+                        dc.b    '@@@KESO@@@'
 
 WC_WordsPtr:            dc.l    0
                         dcb.w   2,0
@@ -542,44 +665,56 @@ WC_Copper:
 	dc.w	$010a,80
         dc.w    $0100,$0200
 
-	dc.w	$0180,$0012,$0182,$0222,$0184,$0222,$0186,$0222
-	dc.w	$0188,$0222,$018a,$0222,$018c,$0222,$018e,$0222
+	dc.w	$0180,$0012
+        ; dc.w    $0182,$0222,$0184,$0222,$0186,$0222
+	; dc.w	$0188,$0222,$018a,$0222,$018c,$0222,$018e,$0222
+	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+	dc.w	$0190,$0012
+        dc.w    $0192,$0222,$0194,$0222,$0196,$0222
+	dc.w	$0198,$0555,$019a,$0666,$019c,$0333,$019e,$0333
 
         dc.w    $0100,$3200
 WC_BplPtrs:
 	dc.w	$00e0,$0000,$00e2,$0000
 	dc.w	$00e4,$0000,$00e6,$0000
 	dc.w	$00e8,$0000,$00ea,$0000
+	dc.w	$00ec,$0000,$00ee,$0000
 
-        dc.b    $2c+128-35-90,$01
-        dc.w    $fffe
-	; dc.w	$0180,$0222,$0182,$0222,$0184,$0222,$0186,$0222
-	; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
-	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
-	dc.w	$0188,$0333,$018a,$0444,$018c,$0333,$018e,$0333
-
-        ; dc.b    $2c+128-35-60,$01
+        ; dc.b    $2c+128-35-90,$01
         ; dc.w    $fffe
-	; ; dc.w	$0180,$0222,$0182,$0333,$0184,$0222,$0186,$0444
-	; ; dc.w	$0188,$0888,$018a,$0999,$018c,$0555,$018e,$0666
+	; ; dc.w	$0180,$0222,$0182,$0222,$0184,$0222,$0186,$0222
+	; ; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
 	; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
-	; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+	; dc.w	$0188,$0333,$018a,$0444,$018c,$0333,$018e,$0333
 
-        dc.b    $2c+128-35-8,$01
-        dc.w    $fffe
+        ; ; dc.b    $2c+128-35-60,$01
+        ; ; dc.w    $fffe
+	; ; ; dc.w	$0180,$0222,$0182,$0333,$0184,$0222,$0186,$0444
+	; ; ; dc.w	$0188,$0888,$018a,$0999,$018c,$0555,$018e,$0666
+	; ; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	; ; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+
+        ; dc.b    $2c+128-35-8,$01
+        ; dc.w    $fffe
 	; dc.w	$0180,$0222,$0182,$0444,$0184,$0333,$0186,$0666
 	; dc.w	$0188,$0ccc,$018a,$0ccc,$018c,$0999,$018e,$0999
 	; dc.w	$0182,$0444,$0184,$0333,$0186,$0666
 	; dc.w	$0188,$0ccc,$018a,$0ccc,$018c,$0999,$018e,$0999
-	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
-	dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+	; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
 
 
         dc.b    $2c+128-33,$01
         dc.w    $fffe
 WC_CopCols:
-	dc.w	$0182,$0555,$0184,$0444,$0186,$0888
-	dc.w	$0188,$0eee,$018a,$0fff,$018c,$0bbb,$018e,$0ccc
+	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+	; dc.w	$0182,$0555,$0184,$0444,$0186,$0888
+	; dc.w	$0188,$0eee,$018a,$0fff,$018c,$0bbb,$018e,$0ccc
+WC_FadeCols:
+        dc.w    $0192,$0222,$0194,$0222,$0196,$0222
+	dc.w	$0198,$0555,$019a,$0666,$019c,$0333,$019e,$0333
 
         dc.b    $2c+128+32,$01
         dc.w    $fffe
@@ -587,17 +722,19 @@ WC_CopCols:
 	; dc.w	$0188,$0ccc,$018a,$0ccc,$018c,$0999,$018e,$0999
 	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
 	dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+        dc.w    $0192,$0222,$0194,$0222,$0196,$0222
+	dc.w	$0198,$0555,$019a,$0666,$019c,$0333,$019e,$0333
 
-        dc.b    $2c+128+35+8,$01
-        dc.w    $fffe
-	; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
-	; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
-
-        ; dc.w    $ffdf,$fffe
-        ; dc.b    $2c+128+35+60-256,$01
+        ; dc.b    $2c+128+35+8,$01
         ; dc.w    $fffe
-	dc.w	$0182,$0222,$0184,$0222,$0186,$0222
-	dc.w	$0188,$0333,$018a,$0444,$018c,$0333,$018e,$0333
+	; ; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	; ; dc.w	$0188,$0555,$018a,$0666,$018c,$0333,$018e,$0333
+
+        ; ; dc.w    $ffdf,$fffe
+        ; ; dc.b    $2c+128+35+60-256,$01
+        ; ; dc.w    $fffe
+	; dc.w	$0182,$0222,$0184,$0222,$0186,$0222
+	; dc.w	$0188,$0333,$018a,$0444,$018c,$0333,$018e,$0333
 
 	dc.w	$ffff,$fffe
 	dc.w	$ffff,$fffe

@@ -4,13 +4,17 @@ DR_NrRows       = 4
 
 ************************************************************
         SECTION DotRemove, CODE_P
+
+        include "include/macros.i"
+
 DotRemove_Init:
 	lea.l	$dff000,a6
 
 	move.l	ViewBuffer,a0
         move.l  #(256<<6)+(320>>4),d0
         jsr	BltClr
-	jsr	WaitBlitter
+	; jsr	WaitBlitter
+        WAITBLIT
 
         move.l  DrawBuffer,a0
         move.l  ViewBuffer,a1
@@ -21,11 +25,28 @@ DotRemove_Init:
         move.l  #-1,(a1)+
         dbf     d7,.fill
 
-        move.l  ViewBuffer,a0
+        lea.l   DR_Background,a0
 	lea	DR_BplPtrs+2,a1
+        move.l  #320*256>>3,d0
+	moveq	#4-1,d1
+	jsr	SetBpls
+
+        move.l  ViewBuffer,a0
+	lea	DR_BplPtrs+(4*8)+2,a1
         moveq   #0,d0
 	moveq	#1-1,d1
 	jsr	SetBpls
+
+        lea.l   DR_Positions+(DR_NrRows*DR_NrColumns-1)*4*2(pc),a0
+        lea.l   DR_PositionsReversed(pc),a1
+        move.w  #DR_NrColumns*DR_NrRows-1,d7
+.reverse:
+        move.w  (a0),(a1)+
+        move.w  2(a0),(a1)+
+        move.w  4(a0),(a1)+
+        move.w  6(a0),(a1)+
+        subq.l  #8,a0
+        dbf     d7,.reverse
 
     	move.l	#DR_Copper,$80(a6)
         rts
@@ -37,7 +58,7 @@ DotRemove_Run:
 	movem.l	a2-a3,DrawBuffer
 
 	move.l	a3,a0
-	lea	DR_BplPtrs+2,a1
+	lea	DR_BplPtrs+(4*8)+2,a1
         moveq   #0,d0
 	moveq	#1-1,d1
 	jsr	SetBpls
@@ -45,7 +66,7 @@ DotRemove_Run:
 	move.l	a2,a0
         move.l  #(256<<6)+(320>>4),d0
 	jsr	BltClr
-	jsr	WaitBlitter
+        WAITBLIT
 
         bsr     DotRemove_Wave
         bsr     DotRemove_RenderBlocks
@@ -58,24 +79,107 @@ DotRemove_Interrupt:
 
         move.l  DR_LocalFrameCounter(pc),d0
 
-        cmp.w   #120,d0
-        bgt.s   .wave
-        bsr.s   .dotEffect
-        bra     .done
+        cmp.w   #99-10,d0
+        ble     .dotEffect
+        cmp.w   #100-10,d0
+        beq.s   .resetDots1
+        cmp.w   #199-10,d0
+        ble     .dotEffect
+        cmp.w   #200-10,d0
+        beq.s   .resetDots2
+        cmp.w   #299-10,d0
+        ble     .dotEffect
+        cmp.w   #300-10,d0
+        beq     .resetDots3
+        cmp.w   #399-25,d0
+        ble     .dotEffect
+        cmp.w   #400-25,d0
+        beq     .resetDots4
+        cmp.w   #499-25,d0
+        ble     .dotEffect
+        cmp.w   #500-25,d0
+        beq     .resetDots5
+        cmp.w   #599-25,d0
+        ble     .dotEffect
 
-.wave:  cmp.w   #256,d0
-        bgt.s   .waveAndTwirl
-        bsr.s   .waveEffect
-        bra     .done
+        ; cmp.w   #120,d0
+        ; bgt.s   .wave
+        ; bsr.s   .dotEffect
+        ; bra     .done
 
-.waveAndTwirl:
-        cmp.w   #500,d0
-        bgt.s   .done
-        bsr.s   .scaleDownEffect
-        bsr.s   .waveEffect
-        bra     .done
+; .wave:  cmp.w   #256,d0
+;         bgt.s   .waveAndTwirl
+;         bsr.s   .waveEffect
+;         bra     .done
+
+; .waveAndTwirl:
+;         cmp.w   #500,d0
+;         bgt.s   .done
+;         bsr.s   .scaleDownEffect
+;         bsr.s   .waveEffect
+;         bra     .done
 
 .done:  rts
+
+.resetDots1:
+        move.w  #12,DR_RowIndex
+        move.w  #8,DR_RowIndex+2
+        move.w  #6,DR_RowIndex+4
+        move.w  #0,DR_RowIndex+6
+
+        move.w  #-64,DR_TargetYPos
+
+        clr.w   DR_Counter
+        move.l  #DR_PositionsReversed,DR_PositionsPtr
+        bra     .dotEffect
+
+.resetDots2:
+        move.w  #6,DR_RowIndex
+        move.w  #12,DR_RowIndex+2
+        move.w  #0,DR_RowIndex+4
+        move.w  #8,DR_RowIndex+6
+
+        clr.w   DR_TargetYPos
+
+        clr.w   DR_Counter
+        move.l  #DR_Positions,DR_PositionsPtr
+        bra     .dotEffect
+
+.resetDots3:
+        move.w  #12,DR_RowIndex
+        move.w  #8,DR_RowIndex+2
+        move.w  #6,DR_RowIndex+4
+        move.w  #0,DR_RowIndex+6
+
+        move.w  #64,DR_TargetYPos
+
+        clr.w   DR_Counter
+        move.l  #DR_PositionsReversed,DR_PositionsPtr
+        bra     .dotEffect
+
+.resetDots4:
+        move.w  #6,DR_RowIndex
+        move.w  #12,DR_RowIndex+2
+        move.w  #0,DR_RowIndex+4
+        move.w  #8,DR_RowIndex+6
+
+        move.w  #-64,DR_TargetYPos
+
+        clr.w   DR_Counter
+        move.l  #DR_Positions,DR_PositionsPtr
+        bra     .dotEffect
+
+.resetDots5:
+        move.w  #12,DR_RowIndex
+        move.w  #8,DR_RowIndex+2
+        move.w  #6,DR_RowIndex+4
+        move.w  #0,DR_RowIndex+6
+
+        clr.w   DR_TargetYPos
+
+        clr.w   DR_Counter
+        move.l  #DR_PositionsReversed,DR_PositionsPtr
+        bra     .dotEffect
 
 .scaleDownEffect:
         move.l  DR_LocalFrameCounter(pc),d0
@@ -88,30 +192,41 @@ DotRemove_Interrupt:
 .scaleDoneExit:
         rts
 
-.waveEffect:
-        lea.l   DR_WaveSinIndex(pc),a0
-        move.l  d7,-(sp)
-        move.w  DR_Columns(pc),d7
-.inc:   add.w   #30,(a0)+
-        dbf     d7,.inc
-        move.l  (sp)+,d7
+; .waveEffect:
+;         lea.l   DR_WaveSinIndex(pc),a0
+;         move.l  d7,-(sp)
+;         move.w  DR_Columns(pc),d7
+; .inc:   add.w   #30,(a0)+
+;         dbf     d7,.inc
+;         move.l  (sp)+,d7
 
-        cmp.w   #DR_NrColumns-1,DR_Columns
-        beq     .waveExit
-        and.w   #3,d0
-        bne.s   .waveExit
+;         cmp.w   #DR_NrColumns-1,DR_Columns
+;         beq     .waveExit
+;         and.w   #3,d0
+;         bne.s   .waveExit
 
-        addq.w  #1,DR_Columns
-.waveExit:
-        rts
+;         addq.w  #1,DR_Columns
+; .waveExit:
+;         rts
 
 .dotEffect:
+        move.w  DR_YPos(pc),d1
+        move.w  DR_TargetYPos(pc),d2
+        cmp.w   d1,d2
+        beq.s   .atTarget
+        cmp.w   d1,d2
+        bmi.s   .subY
+        addq.w  #4,DR_YPos
+        bra.s   .atTarget
+.subY:  subq.w  #4,DR_YPos
+.atTarget:
         and.l   #1,d0
         bne.s   .dotEffectExit
 
-        lea.l   DR_RowIndex(pc),a0
-        cmp.w   #60*2,6(a0)
+        add.w   #1,DR_Counter
+        cmp.w   #60,DR_Counter
         beq.s   .dotEffectExit
+        lea.l   DR_RowIndex(pc),a0
         addq.w  #2,(a0)+
         addq.w  #2,(a0)+
         addq.w  #2,(a0)+
@@ -154,7 +269,8 @@ DotRemove_RenderBlocks:
         move.l  a6,-(sp)
 
         move.l  DrawBuffer,a0
-        lea.l   DR_Positions(pc),a1
+        ; lea.l   DR_Positions(pc),a1
+        move.l  DR_PositionsPtr(pc),a1
         lea.l   DR_RowIndex(pc),a2
         lea.l   DR_DotIndexTable(pc),a3
         lea.l   DotMask,a4
@@ -172,9 +288,11 @@ DotRemove_RenderBlocks:
         move.w  d2,d4
         move.l  (a1)+,d3
 
-        move.w  DR_ScaleFactor,d5
-        muls    d5,d3
-        asr.l   #5,d3
+        add.w   DR_YPos(pc),d3
+
+        ; move.w  DR_ScaleFactor,d5
+        ; muls    d5,d3
+        ; asr.l   #5,d3
 
         add.w   #128-8,d3
         lsr.w   #3,d2
@@ -215,6 +333,10 @@ DR_ScaleFactor:         dc.w    32
 DR_WaveSinIndex:        dcb.w   DR_NrColumns,0
 DR_Columns:             dc.w    0
 
+DR_YPos:                dc.w    0
+DR_TargetYPos:          dc.w    0
+
+DR_Counter:             dc.w    0
 DR_RowIndex:            dc.w    0,6,12,8
 DR_DotIndexTable:       dcb.w   20,0
                         dc.w    1*16*4
@@ -252,6 +374,7 @@ DR_DotIndexTable:       dcb.w   20,0
                         dcb.w   32,6*16*4
                         dc.l    0
 
+DR_PositionsPtr:        dc.l    DR_Positions
 DR_Positions:           
 Y                       SET     -32+8
                         REPT    DR_NrRows
@@ -262,6 +385,7 @@ X                       SET     X-16
                         ENDR
 Y                       SET     Y+16
                         ENDR
+DR_PositionsReversed:   ds.w    DR_NrRows*DR_NrColumns*4
 
 ************************************************************
         SECTION DR_Copper, CODE_C
@@ -277,12 +401,27 @@ DR_Copper:
 	dc.w	$0108,$0000
 	dc.w	$010a,$0000
 
-	dc.w	$0180,$0012
-	dc.w	$0182,$0fff
+	dc.w	$0180,$0012,$0182,$0012,$0184,$0012,$0186,$0012
+	dc.w	$0188,$0012,$018a,$0012,$018c,$0012,$018e,$0012
+	dc.w	$0190,$0012,$0192,$0012,$0194,$0012,$0196,$0012
+	dc.w	$0198,$0012,$019a,$0012,$019c,$0012,$019e,$0012
+	dc.w	$01a0,$0fff,$01a2,$0ccc,$01a4,$0aaa,$01a6,$0888
+	dc.w	$01a8,$0666,$01aa,$0777,$01ac,$0999,$01ae,$0bbb
+	dc.w	$01b0,$0ddd,$01b2,$0fff,$01b4,$0eee,$01b6,$0ccc
+	dc.w	$01b8,$0aaa,$01ba,$0888,$01bc,$0666,$01be,$0444
 
-        dc.w    $0100,$1200
 DR_BplPtrs:
 	dc.w	$00e0,$0000,$00e2,$0000
+	dc.w	$00e4,$0000,$00e6,$0000
+	dc.w	$00e8,$0000,$00ea,$0000
+	dc.w	$00ec,$0000,$00ee,$0000
+	dc.w	$00f0,$0000,$00f2,$0000
+        
+        dc.w    $0100,$5200
 
 	dc.w	$ffff,$fffe
 	dc.w	$ffff,$fffe
+
+        SECTION DR_Data, DATA_C
+
+DR_Background:  incbin  "data/graphics/dot_bkg_320x256x4.raw"

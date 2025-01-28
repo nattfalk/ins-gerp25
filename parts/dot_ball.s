@@ -12,6 +12,11 @@ DB_InitialDots		= 20
 ************************************************************
 * Initialize
 ************************************************************
+DotBall_InitReturn:
+		lea.l	$dff000,a6
+    	move.l	#DB_Copper,$80(a6)
+		rts
+
 DotBall_Init:
 		lea.l	$dff000,a6
 
@@ -191,7 +196,7 @@ DotBall_Run:
 		beq.s	.addDots1
 		cmp.l	#250,DB_LocalFrameCounter
 		beq.s	.addDots2
-		cmp.l	#1000,DB_LocalFrameCounter
+		cmp.l	#1200,DB_LocalFrameCounter
 		blo.s	.doRotate
 
 .render:

@@ -52,7 +52,7 @@ WordWriter_Run:
 		move.l  #(256<<6)+(320>>4),d0
 		jsr		BltClr
 
-		cmp.l	#600,WW_LocalFrameCounter
+		cmp.l	#580,WW_LocalFrameCounter
 		bmi.s	.textWriter
 		cmp.l	#1500,WW_LocalFrameCounter
 		bmi.s	.clearText
@@ -280,7 +280,7 @@ WW_Text:	dc.b	10,10,10,10,10,5,20,3
 			dc.b	'WITH',5,10,2,' PIXELS',5,10,3,',',5,10,2,' CODE',5,10,3,', ',5,10,2,'CHIP ',5,10,'SOUNDS ',5,10,3,'AND ',5,10,'FLAT',10
 			dc.b	' OUT ',5,10,'SHARED ',5,10,'AMAZEMENT ',5,10,'ON ',5,10,'WHAT ',5,10,'COULD ',5,10,'BE',10
 			dc.b	'    ',5,10,'DONE ',5,10,'ON ',5,10,'A ',5,10,'HOME ',5,10,'COMPUTER. ',5,10,'WE ',5,10,'WERE ',10
-			dc.b	10,5,100,1
+			dc.b	10,5,85,1
 			dc.b	'          ... LOWRES ',5,8,'KIDS ...',0
 
 ************************************************************
