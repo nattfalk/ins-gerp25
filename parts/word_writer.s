@@ -141,6 +141,9 @@ RenderDotLineEffect:
 		add.w	d1,d1
 		move.w	(a2,d1.w),d1
 
+		move.w	d0,d3
+		move.w	d1,d4
+
 		move.w	d0,d2
 		lsr.w	#3,d0
 		add.w	d0,d1
@@ -148,6 +151,19 @@ RenderDotLineEffect:
 		and.b	#$7,d2
 		not.b	d2
 		bset.b	d2,(a0,d1.w)
+		bset.b	d2,40(a0,d1.w)
+
+		move.w	d3,d0
+		addq.w	#1,d0
+		move.w	d0,d2
+		lsr.w	#3,d0
+		move.w	d4,d1
+		add.w	d0,d1
+		
+		and.b	#$7,d2
+		not.b	d2
+		bset.b	d2,(a0,d1.w)
+		bset.b	d2,40(a0,d1.w)
 
 		move.w	(a1),d0
 		add.w	4(a1),d0

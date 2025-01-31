@@ -52,7 +52,7 @@ ErrolImage_Run:
         bmi.s   .fadeIn
         cmp.l   #50,EI_LocalFrameCounter
         beq.s   .resetFade
-        cmp.l   #650,EI_LocalFrameCounter
+        cmp.l   #375,EI_LocalFrameCounter
         bge.s   .fadeOut
 .done:  
         addq.l  #1,EI_LocalFrameCounter
@@ -62,7 +62,7 @@ ErrolImage_Run:
         lea.l   EI_ImageFadePal(pc),a0
         lea.l   EI_ImagePal(pc),a1
         lea.l   EI_CopCols,a2
-        moveq   #12,d0
+        moveq   #24,d0
         moveq   #16-1,d1
         jsr     Fade
         bra.s   .done
@@ -71,7 +71,7 @@ ErrolImage_Run:
         lea.l   EI_ImagePal(pc),a0
         lea.l   EI_ImageFadePal(pc),a1
         lea.l   EI_CopCols,a2
-        moveq   #12,d0
+        moveq   #24,d0
         moveq   #16-1,d1
         jsr     Fade
         bra.s   .done

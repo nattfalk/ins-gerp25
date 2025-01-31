@@ -10,20 +10,21 @@ DR_NrRows       = 4
 DotRemove_Init:
 	lea.l	$dff000,a6
 
-	move.l	ViewBuffer,a0
+	move.l	DrawBuffer,a0
         move.l  #(256<<6)+(320>>4),d0
         jsr	BltClr
-	; jsr	WaitBlitter
         WAITBLIT
 
         move.l  DrawBuffer,a0
-        move.l  ViewBuffer,a1
         lea.l   96*40(a0),a0
-        lea.l   96*40(a1),a1
         move.w  #64*10-1,d7
 .fill:  move.l  #-1,(a0)+
-        move.l  #-1,(a1)+
         dbf     d7,.fill
+
+        move.l  ViewBuffer,a0
+        move.w  #256*10-1,d7
+.fill2: move.l  #-1,(a0)+
+        dbf     d7,.fill2
 
         lea.l   DR_Background,a0
 	lea	DR_BplPtrs+2,a1
@@ -37,22 +38,85 @@ DotRemove_Init:
 	moveq	#1-1,d1
 	jsr	SetBpls
 
-        lea.l   DR_Positions+(DR_NrRows*DR_NrColumns-1)*4*2(pc),a0
-        lea.l   DR_PositionsReversed(pc),a1
-        move.w  #DR_NrColumns*DR_NrRows-1,d7
-.reverse:
-        move.w  (a0),(a1)+
-        move.w  2(a0),(a1)+
-        move.w  4(a0),(a1)+
-        move.w  6(a0),(a1)+
-        subq.l  #8,a0
-        dbf     d7,.reverse
-
     	move.l	#DR_Copper,$80(a6)
+
+        jsr     InitFade
+
         rts
 
 ************************************************************
 DotRemove_Run:
+        cmp.l   #33,DR_LocalFrameCounter
+        bge     .doDots
+
+        cmp.l   #16,DR_LocalFrameCounter
+        bge.s   .fadeDone
+
+        lea.l   DR_BackgroundFromColor(pc),a0
+        lea.l   DR_BackgroundToColor(pc),a1
+        lea.l   DR_CopCols,a2
+        moveq   #14,d0
+        moveq   #1-1,d1
+        jsr     Fade
+
+.fadeDone:
+        move.w  DR_ClearYPos(pc),d0
+        cmp.w   #96,d0
+        beq.s   .clearDone
+
+        move.l  ViewBuffer,a0
+        move.w  d0,d1
+        mulu    #40,d0
+        lea.l   (a0,d0.w),a1
+ 
+        move.w  #253,d2
+        sub.w   d1,d2
+        mulu    #40,d2
+        lea.l   (a0,d2.w),a0
+
+        moveq   #3*10-1,d7
+.clear: clr.l   (a1)+
+        clr.l   (a0)+
+        dbf     d7,.clear
+        addq.w  #3,DR_ClearYPos
+
+.clearDone:
+        cmp.w   #48,DR_ClearYPos
+        bne.s   .doFade2
+        jsr     InitFade
+.doFade2:
+        cmp.w   #48,DR_ClearYPos
+        blo.s   .skipFade
+
+        lea.l   DR_FromCols(pc),a0
+        lea.l   DR_ToCols(pc),a1
+        lea.l   DR_CopCols2,a2
+        moveq   #16,d0
+        moveq   #16-1,d1
+        jsr     Fade
+.skipFade:
+        bra     .done
+.doDots:
+
+        cmp.l   #550,DR_LocalFrameCounter
+        bgt.s   .initFadeDone
+        cmp.l   #550,DR_LocalFrameCounter
+        bne.s   .initFadeDone
+        jsr     InitFade
+
+.initFadeDone:
+        cmp.l   #550,DR_LocalFrameCounter
+        blo.s   .noFadeOut
+
+        lea.l   DR_ToCols(pc),a0
+        lea.l   DR_ToCols2(pc),a1
+        lea.l   DR_CopCols2,a2
+        moveq   #48,d0
+        moveq   #16-1,d1
+        jsr     Fade
+        bra.s   .done
+
+.noFadeOut:
 	movem.l	DrawBuffer,a2-a3
 	exg	a2,a3
 	movem.l	a2-a3,DrawBuffer
@@ -68,122 +132,87 @@ DotRemove_Run:
 	jsr	BltClr
         WAITBLIT
 
-        bsr     DotRemove_Wave
         bsr     DotRemove_RenderBlocks
 
+.done:
+        addq.l  #1,DR_LocalFrameCounter
         rts
 
 ************************************************************
 DotRemove_Interrupt:
-        addq.l  #1,DR_LocalFrameCounter
 
         move.l  DR_LocalFrameCounter(pc),d0
 
+        cmp.w   #32,d0
+        ble.s   .done
         cmp.w   #99-10,d0
         ble     .dotEffect
+        
         cmp.w   #100-10,d0
         beq.s   .resetDots1
-        cmp.w   #199-10,d0
+        cmp.w   #189-10,d0
         ble     .dotEffect
-        cmp.w   #200-10,d0
+        
+        cmp.w   #190-10,d0
         beq.s   .resetDots2
-        cmp.w   #299-10,d0
+        cmp.w   #289-10,d0
         ble     .dotEffect
-        cmp.w   #300-10,d0
+        
+        cmp.w   #290-10,d0
         beq     .resetDots3
         cmp.w   #399-25,d0
         ble     .dotEffect
+        
         cmp.w   #400-25,d0
         beq     .resetDots4
         cmp.w   #499-25,d0
         ble     .dotEffect
+        
         cmp.w   #500-25,d0
         beq     .resetDots5
-        cmp.w   #599-25,d0
+        cmp.w   #699-25,d0
         ble     .dotEffect
-
-        ; cmp.w   #120,d0
-        ; bgt.s   .wave
-        ; bsr.s   .dotEffect
-        ; bra     .done
-
-; .wave:  cmp.w   #256,d0
-;         bgt.s   .waveAndTwirl
-;         bsr.s   .waveEffect
-;         bra     .done
-
-; .waveAndTwirl:
-;         cmp.w   #500,d0
-;         bgt.s   .done
-;         bsr.s   .scaleDownEffect
-;         bsr.s   .waveEffect
-;         bra     .done
 
 .done:  rts
 
 .resetDots1:
-        move.w  #12,DR_RowIndex
-        move.w  #8,DR_RowIndex+2
-        move.w  #6,DR_RowIndex+4
-        move.w  #0,DR_RowIndex+6
-
         move.w  #-64,DR_TargetYPos
+        move.w  #2,DR_IndexAddValue
 
         clr.w   DR_Counter
-        move.l  #DR_PositionsReversed,DR_PositionsPtr
         bra     .dotEffect
 
 .resetDots2:
-        move.w  #6,DR_RowIndex
-        move.w  #12,DR_RowIndex+2
-        move.w  #0,DR_RowIndex+4
-        move.w  #8,DR_RowIndex+6
-
         clr.w   DR_TargetYPos
+        move.w  #-2,DR_IndexAddValue
 
         clr.w   DR_Counter
-        move.l  #DR_Positions,DR_PositionsPtr
         bra     .dotEffect
 
 .resetDots3:
-        move.w  #12,DR_RowIndex
-        move.w  #8,DR_RowIndex+2
-        move.w  #6,DR_RowIndex+4
-        move.w  #0,DR_RowIndex+6
-
         move.w  #64,DR_TargetYPos
+        move.w  #2,DR_IndexAddValue
 
         clr.w   DR_Counter
-        move.l  #DR_PositionsReversed,DR_PositionsPtr
         bra     .dotEffect
 
 .resetDots4:
-        move.w  #6,DR_RowIndex
-        move.w  #12,DR_RowIndex+2
-        move.w  #0,DR_RowIndex+4
-        move.w  #8,DR_RowIndex+6
-
         move.w  #-64,DR_TargetYPos
+        move.w  #-2,DR_IndexAddValue
 
         clr.w   DR_Counter
-        move.l  #DR_Positions,DR_PositionsPtr
         bra     .dotEffect
 
 .resetDots5:
-        move.w  #12,DR_RowIndex
-        move.w  #8,DR_RowIndex+2
-        move.w  #6,DR_RowIndex+4
-        move.w  #0,DR_RowIndex+6
-
         clr.w   DR_TargetYPos
 
+        move.w  #4,DR_IndexAddValue
         clr.w   DR_Counter
-        move.l  #DR_PositionsReversed,DR_PositionsPtr
         bra     .dotEffect
 
 .scaleDownEffect:
         move.l  DR_LocalFrameCounter(pc),d0
-        and.w   #3,d0
+        and.w   #1,d0
         bne.s   .scaleDoneExit
 
         tst.w   DR_ScaleFactor
@@ -192,24 +221,13 @@ DotRemove_Interrupt:
 .scaleDoneExit:
         rts
 
-; .waveEffect:
-;         lea.l   DR_WaveSinIndex(pc),a0
-;         move.l  d7,-(sp)
-;         move.w  DR_Columns(pc),d7
-; .inc:   add.w   #30,(a0)+
-;         dbf     d7,.inc
-;         move.l  (sp)+,d7
-
-;         cmp.w   #DR_NrColumns-1,DR_Columns
-;         beq     .waveExit
-;         and.w   #3,d0
-;         bne.s   .waveExit
-
-;         addq.w  #1,DR_Columns
-; .waveExit:
-;         rts
-
 .dotEffect:
+        cmp.l   #480,DR_LocalFrameCounter
+        blo.s   .noScale
+
+        bsr     .scaleDownEffect
+
+.noScale:
         move.w  DR_YPos(pc),d1
         move.w  DR_TargetYPos(pc),d2
         cmp.w   d1,d2
@@ -220,6 +238,7 @@ DotRemove_Interrupt:
         bra.s   .atTarget
 .subY:  subq.w  #4,DR_YPos
 .atTarget:
+        move.l  DR_LocalFrameCounter(pc),d0
         and.l   #1,d0
         bne.s   .dotEffectExit
 
@@ -227,10 +246,11 @@ DotRemove_Interrupt:
         cmp.w   #60,DR_Counter
         beq.s   .dotEffectExit
         lea.l   DR_RowIndex(pc),a0
-        addq.w  #2,(a0)+
-        addq.w  #2,(a0)+
-        addq.w  #2,(a0)+
-        addq.w  #2,(a0)
+        move.w  DR_IndexAddValue(pc),d0
+        add.w   d0,(a0)+
+        add.w   d0,(a0)+
+        add.w   d0,(a0)+
+        add.w   d0,(a0)
 .dotEffectExit:
         rts
 
@@ -269,7 +289,6 @@ DotRemove_RenderBlocks:
         move.l  a6,-(sp)
 
         move.l  DrawBuffer,a0
-        ; lea.l   DR_Positions(pc),a1
         move.l  DR_PositionsPtr(pc),a1
         lea.l   DR_RowIndex(pc),a2
         lea.l   DR_DotIndexTable(pc),a3
@@ -285,19 +304,17 @@ DotRemove_RenderBlocks:
 
         move.l  (a1)+,d2
         add.w   #160-8,d2
-        move.w  d2,d4
         move.l  (a1)+,d3
 
-        add.w   DR_YPos(pc),d3
+        move.w  DR_ScaleFactor,d5
+        muls    d5,d3
+        asr.l   #5,d3
 
-        ; move.w  DR_ScaleFactor,d5
-        ; muls    d5,d3
-        ; asr.l   #5,d3
+        add.w   DR_YPos(pc),d3
 
         add.w   #128-8,d3
         lsr.w   #3,d2
         and.w   #$fffe,d2
-        and.w   #15,d4
 
         add.w   d3,d3
         move.w  (a6,d3.w),d3
@@ -310,7 +327,6 @@ I       SET     0
 II      SET     0
         REPT    16
         move.l  II(a4,d1.w),d5
-        lsr.l   d4,d5
         or.l    d5,I(a5)
 I       SET     I+40
 II      SET     II+4
@@ -328,8 +344,17 @@ II      SET     II+4
 
 DR_LocalFrameCounter:   dc.l    0
 
-DR_ScaleFactor:         dc.w    32
+DR_BackgroundFromColor: dc.w    $0fff
+DR_BackgroundToColor:   dc.w    $0012
 
+DR_FromCols:            dcb.w   16,$0fff
+DR_ToCols:              dc.w	$0fff,$0ccc,$0aaa,$0888,$0666,$0777,$0999,$0bbb
+                        dc.w	$0ddd,$0fff,$0eee,$0ccc,$0aaa,$0888,$0666,$0444
+DR_ToCols2:             dcb.w   16,$0456
+
+DR_ClearYPos:           dc.w    0
+
+DR_ScaleFactor:         dc.w    32
 DR_WaveSinIndex:        dcb.w   DR_NrColumns,0
 DR_Columns:             dc.w    0
 
@@ -337,8 +362,44 @@ DR_YPos:                dc.w    0
 DR_TargetYPos:          dc.w    0
 
 DR_Counter:             dc.w    0
+DR_IndexAddValue:       dc.w    2
 DR_RowIndex:            dc.w    0,6,12,8
-DR_DotIndexTable:       dcb.w   20,0
+
+DR_DotIndexTablePre:    dcb.w   32,6*16*4
+                        dc.w    6*16*4
+                        dc.w    5*16*4
+                        dc.w    4*16*4
+                        dc.w    3*16*4
+                        dc.w    2*16*4
+                        dc.w    1*16*4
+                        dc.w    0*16*4
+
+                        dc.w    1*16*4
+                        dc.w    2*16*4
+                        dc.w    3*16*4
+                        dc.w    4*16*4
+                        dc.w    5*16*4
+                        dc.w    6*16*4
+                        dc.w    5*16*4
+                        dc.w    4*16*4
+                        dc.w    3*16*4
+                        dc.w    2*16*4
+                        dc.w    1*16*4
+                        dc.w    0*16*4
+
+                        dc.w    1*16*4
+                        dc.w    2*16*4
+                        dc.w    3*16*4
+                        dc.w    4*16*4
+                        dc.w    5*16*4
+                        dc.w    6*16*4
+                        dc.w    5*16*4
+                        dc.w    4*16*4
+                        dc.w    3*16*4
+                        dc.w    2*16*4
+                        dc.w    1*16*4
+
+DR_DotIndexTable:       dcb.w   28,0
                         dc.w    1*16*4
                         dc.w    2*16*4
                         dc.w    3*16*4
@@ -371,7 +432,36 @@ DR_DotIndexTable:       dcb.w   20,0
                         dc.w    4*16*4
                         dc.w    5*16*4
                         dc.w    6*16*4
-                        dcb.w   32,6*16*4
+
+                        dc.w    6*16*4
+                        dc.w    5*16*4
+                        dc.w    4*16*4
+                        dc.w    3*16*4
+                        dc.w    2*16*4
+                        dc.w    1*16*4
+                        dc.w    0*16*4
+
+                        dc.w    1*16*4
+                        dc.w    2*16*4
+                        dc.w    3*16*4
+                        dc.w    4*16*4
+                        dc.w    5*16*4
+                        dc.w    6*16*4
+                        dc.w    5*16*4
+                        dc.w    4*16*4
+                        dc.w    3*16*4
+                        dc.w    2*16*4
+                        dc.w    1*16*4
+                        dc.w    0*16*4
+
+                        dc.w    1*16*4
+                        dc.w    2*16*4
+                        dc.w    3*16*4
+                        dc.w    4*16*4
+                        dc.w    5*16*4
+                        dc.w    6*16*4
+
+                        dcb.w   96,6*16*4
                         dc.l    0
 
 DR_PositionsPtr:        dc.l    DR_Positions
@@ -385,7 +475,6 @@ X                       SET     X-16
                         ENDR
 Y                       SET     Y+16
                         ENDR
-DR_PositionsReversed:   ds.w    DR_NrRows*DR_NrColumns*4
 
 ************************************************************
         SECTION DR_Copper, CODE_C
@@ -401,14 +490,16 @@ DR_Copper:
 	dc.w	$0108,$0000
 	dc.w	$010a,$0000
 
-	dc.w	$0180,$0012,$0182,$0012,$0184,$0012,$0186,$0012
+DR_CopCols:
+	dc.w	$0180,$0fff,$0182,$0012,$0184,$0012,$0186,$0012
 	dc.w	$0188,$0012,$018a,$0012,$018c,$0012,$018e,$0012
 	dc.w	$0190,$0012,$0192,$0012,$0194,$0012,$0196,$0012
 	dc.w	$0198,$0012,$019a,$0012,$019c,$0012,$019e,$0012
-	dc.w	$01a0,$0fff,$01a2,$0ccc,$01a4,$0aaa,$01a6,$0888
-	dc.w	$01a8,$0666,$01aa,$0777,$01ac,$0999,$01ae,$0bbb
-	dc.w	$01b0,$0ddd,$01b2,$0fff,$01b4,$0eee,$01b6,$0ccc
-	dc.w	$01b8,$0aaa,$01ba,$0888,$01bc,$0666,$01be,$0444
+DR_CopCols2:
+	dc.w	$01a0,$0fff,$01a2,$0fff,$01a4,$0fff,$01a6,$0fff
+	dc.w	$01a8,$0fff,$01aa,$0fff,$01ac,$0fff,$01ae,$0fff
+	dc.w	$01b0,$0fff,$01b2,$0fff,$01b4,$0fff,$01b6,$0fff
+	dc.w	$01b8,$0fff,$01ba,$0fff,$01bc,$0fff,$01be,$0fff
 
 DR_BplPtrs:
 	dc.w	$00e0,$0000,$00e2,$0000

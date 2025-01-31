@@ -42,7 +42,7 @@ WordChanger_Init:
         dbf     d7,.setBpls
 
         move.l  DrawBuffer,a0
-        lea.l   (768*40)+((128-33)*40)(a0),a0
+        adda.l  #(768*40)+((128-33)*40),a0
         move.l  #65*10-1,d7
 .fill:  move.l  #$ffffffff,(a0)+
         dbf     d7,.fill
@@ -132,7 +132,7 @@ WordChanger_Run_Credits:
 .done:  addq.l  #1,WC_LocalFrameCounter
         rts
 
-GREETINGS_ROWS = 45
+GREETINGS_ROWS = 46
 TIME_PER_GREET = 70
 WordChanger_Run_Greetings:
         cmp.w   #0,WC_FadeStep
@@ -592,7 +592,7 @@ WC_Words_Greetings:     dc.b    '@@@@@@@@@@'
                         dc.b    'BITBENDAZ@'
                         dc.b    '@EPHIDRENA'
                         dc.b    '@@@@HMF@@@'
-                        dc.b    '@@@ERROL@@'
+                        dc.b    'E@R@R@O@L@'
                         dc.b    '@@@SMFX@@@'
                         dc.b    '@PACIFIC@@'
                         dc.b    '@SCENESAT@'
@@ -623,6 +623,7 @@ WC_Words_Greetings:     dc.b    '@@@@@@@@@@'
                         dc.b    '@@ISTARI@@'
                         dc.b    '@OUTBREAK@'
                         dc.b    '@@@KESO@@@'
+                        dc.b    'FJALLDATA@'
 
 WC_WordsPtr:            dc.l    0
                         dcb.w   2,0

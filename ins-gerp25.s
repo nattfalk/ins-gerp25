@@ -6,7 +6,7 @@
 	
 ********** Flags **************
 PLAY_MUSIC = 1
-SHOW_RASTER = 0
+SHOW_RASTER = 1
 
 ********** Constants **********
 w		= 320
@@ -155,15 +155,15 @@ DrawBuffer:		dc.l	Screen2
 ViewBuffer:		dc.l	Screen
 
 EffectsTable:		
-			dc.l	15*50, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
-			dc.l	(2+15)*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
-			dc.l	(2+17)*50, Logo_Init, Logo_Run, Logo_Interrupt
-			dc.l	(3+20)*50, LowresKidsImage_Init, LowresKidsImage_Run, LowresKidsImage_Interrupt
-			dc.l	(12+23)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
-			dc.l	(11+35)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
-			dc.l	(8+46)*50, ErrolImage_Init, ErrolImage_Run, ErrolImage_Interrupt
-			dc.l	(8+54)*50, DotBall_InitReturn, DotBall_Run, DotBall_Interrupt
-			dc.l	(26+65)*50, WordChanger_Init_Credits, WordChanger_Run_Credits, WordChanger_Interrupt
+			; dc.l	15*50, WordWriter_Init, WordWriter_Run, WordWriter_Interrupt
+			; dc.l	(2+15)*50, HorizontalStrips_Init, HorizontalStrips_Run, HorizontalStrips_Interrupt
+			; dc.l	(2+17)*50, Logo_Init, Logo_Run, Logo_Interrupt
+			; dc.l	(3+20)*50, LowresKidsImage_Init, LowresKidsImage_Run, LowresKidsImage_Interrupt
+			; dc.l	(12+23)*50, DotRemove_Init, DotRemove_Run, DotRemove_Interrupt
+			; dc.l	(11+35)*50, DotBall_Init, DotBall_Run, DotBall_Interrupt
+			; dc.l	(8+46)*50, ErrolImage_Init, ErrolImage_Run, ErrolImage_Interrupt
+			; dc.l	(7+54)*50, DotBall_InitReturn, DotBall_Run, DotBall_Interrupt
+			dc.l	(30+61)*50, WordChanger_Init_Credits, WordChanger_Run_Credits, WordChanger_Interrupt
 			dc.l	(4+91)*50, TransitionToScroller_Init, TransitionToScroller_Run, TransitionToScroller_Interrupt
 			dc.l	(30+95)*50, SineScroller_Init, SineScroller_Run, SineScroller_Interrupt
 			dc.l	(65+125)*50, WordChanger_Init_Greetings, WordChanger_Run_Greetings, WordChanger_Interrupt

@@ -290,21 +290,19 @@ DB_RotateDots:
 .rotate:movem.w (a0)+,d0-d2
         jsr     RotatePoint
 
-		; move.w	d2,d3
-		; add.w	#256,d3
+		move.w	d2,d3
+		add.w	#256,d3
 
         ; Project x
         ext.l   d0
-        ; asl.l   #7,d0
-        ; ; divs    d3,d0
-		; asr.l	#8,d0
-		asr.l	#1,d0
+        asl.l   #7,d0
+        divs    d3,d0
+		; asr.l	#1,d0
 
         ; Project y
         ext.l   d1
         ; asl.l   #7,d1
-        ; ; divs    d3,d1
-		; asr.l	#7,d1
+        ; divs    d3,d1
 		asr.l	#1,d1
 
 		movem.w	d0-d2,(a1)
@@ -518,7 +516,8 @@ DB_BallCenterXTable:		dc.w	300,160-64
 							dc.w	300+(DB_BEAT*12),160
 							dc.w	300+(DB_BEAT*13),160+32
 							dc.w	300+(DB_BEAT*14),160+64
-							dc.w	300+(DB_BEAT*15),160
+							dc.w	300+(DB_BEAT*15),160+32
+							dc.w	300+(DB_BEAT*16),160
 							dc.w	300+(DB_BEAT*18),160-64
 							dc.w	300+(DB_BEAT*19),160+64
 							dc.w	300+(DB_BEAT*20),160-32
