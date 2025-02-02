@@ -7,7 +7,7 @@ Graphics by Corel, TmX, Vedder
   
 Code is built using VS Code and the [Amiga Assembly extension](https://github.com/prb28/vscode-amiga-assembly) by prb28  
 
-All intro code written in plain MC68000 assembler. Some external tools for generating data are written in Python.  
+All demo code written in plain MC68000 assembler. Some external tools for generating data are written in Python.  
 
 Uses the following additionals:
 * Startupcode from Photon/Scoopex  
