@@ -12,6 +12,46 @@ DB_InitialDots		= 20
 ************************************************************
 * Initialize
 ************************************************************
+DotBall_InitHeart:
+		; Use for debugging purposes only
+		; bsr		DotBall_Init
+
+		move.l	#160,DB_LocalFrameCounter
+		move.l	#DB_BallCenterXTable,DB_BallCenterXTablePtr
+
+		move.w	#38,DB_DotCount
+		lea.l	DB_HeartCoords,a0
+		lea.l	DB_Coords(pc),a1
+		move.w	DB_DotCount(pc),d7
+		subq.w	#1,d7
+.copyCoords:
+		move.w	(a0)+,d0
+		asl.w	#2,d0
+		move.w	d0,(a1)+
+		move.w	(a0)+,d0
+		asl.w	#2,d0
+		move.w	d0,(a1)+
+		move.w	(a0)+,d0
+		asl.w	#2,d0
+		move.w	d0,(a1)+
+		dbf		d7,.copyCoords
+
+		move.w	#14,DB_DotCount
+		move.w	#12,DB_AddDots
+
+		lea.l	DB_HeartPalette(pc),a0
+		move.l	a0,DB_PalettePtr
+		lea.l	DB_CopCols,a1
+		moveq	#8-1,d7
+.setCols:
+		move.w	(a0)+,2(a1)
+		addq.l	#4,a1
+		dbf		d7,.setCols
+
+		lea.l	$dff000,a6
+    	move.l	#DB_Copper,$80(a6)
+		rts
+
 DotBall_InitReturn:
 		lea.l	$dff000,a6
     	move.l	#DB_Copper,$80(a6)
@@ -171,6 +211,46 @@ DotBall_Init:
 ************************************************************
 * Run
 ************************************************************
+DotBall_RunHeart:
+		movem.l	DrawBuffer,a2-a3
+		exg		a2,a3
+		movem.l	a2-a3,DrawBuffer
+
+		move.l	a3,a0
+		lea		DB_BplPtrs+2,a1
+		move.l	#320*192>>3,d0
+		moveq	#3-1,d1
+		jsr		SetBpls
+
+		move.l	a2,a0
+		move.l  #((192*3)<<6)+(320>>4),d0
+		jsr		BltClr
+
+		move.l	DB_BallCenterXTablePtr(pc),a0
+		moveq	#0,d0
+		move.w	(a0),d0
+		cmp.w	#-1,d0
+		beq.s	.moveDone
+		cmp.l	DB_LocalFrameCounter(pc),d0
+		bne.s	.moveDone
+		move.w	2(a0),DB_BallCenterX
+		addq.l	#4,DB_BallCenterXTablePtr
+
+.moveDone:
+		; Rotate
+		bsr		DB_RotateDots
+
+		add.w	#12,DB_Angles
+		add.w	#8,DB_Angles+2
+		addq.w	#4,DB_Angles+4
+
+		jsr		WaitBlitter
+		bsr		DB_RenderDots
+
+.done:	
+		addq.l	#1,DB_LocalFrameCounter
+		rts
+
 DotBall_Run:
 		movem.l	DrawBuffer,a2-a3
 		exg		a2,a3
@@ -178,13 +258,11 @@ DotBall_Run:
 
 		move.l	a3,a0
 		lea		DB_BplPtrs+2,a1
-		; move.l	#320*256>>3,d0
 		move.l	#320*192>>3,d0
 		moveq	#3-1,d1
 		jsr		SetBpls
 
 		move.l	a2,a0
-		; move.l  #(768<<6)+(320>>4),d0
 		move.l  #((192*3)<<6)+(320>>4),d0
 		jsr		BltClr
 
@@ -196,12 +274,14 @@ DotBall_Run:
 		beq.s	.addDots1
 		cmp.l	#250,DB_LocalFrameCounter
 		beq.s	.addDots2
-		cmp.l	#1200,DB_LocalFrameCounter
-		blo.s	.doRotate
-
+		bra.s	.doRotate
+		
 .render:
-		; cmp.l	#350,DB_LocalFrameCounter
-		; bge.s	.sideScale
+		cmp.l	#300+(DB_BEAT*13),DB_LocalFrameCounter
+		beq		.invertPalette
+
+		cmp.l	#300+(DB_BEAT*17),DB_LocalFrameCounter
+		beq		.originalPalette
 .render2:
 		jsr		WaitBlitter
 		bsr		DB_RenderDots
@@ -228,11 +308,13 @@ DotBall_Run:
 		bra.s	.doRotate
 
 .addDots1:
-		add.w	#DB_InitialDots-2,DB_DotCount
+		move.w	DB_AddDots,d0
+		add.w	d0,DB_DotCount
 		bra.s	.doRotate
 
 .addDots2:
-		add.w	#DB_InitialDots-2,DB_DotCount
+		move.w	DB_AddDots,d0
+		add.w	d0,DB_DotCount
 
 .doRotate:
 		move.l	DB_BallCenterXTablePtr(pc),a0
@@ -264,6 +346,26 @@ DotBall_Run:
 		asr.w	#1,d0
 		move.w	d0,DB_ScaleValue
 
+		bra		.render
+
+.invertPalette:
+		lea.l	DB_InvertedPalette(pc),a0
+		lea.l	DB_CopCols,a1
+		moveq	#8-1,d7
+.setCols:
+		move.w	(a0)+,2(a1)
+		addq.l	#4,a1
+		dbf		d7,.setCols
+		bra		.render2
+
+.originalPalette:
+		move.l	DB_PalettePtr(pc),a0
+		lea.l	DB_CopCols,a1
+		moveq	#8-1,d7
+.setCols2:
+		move.w	(a0)+,2(a1)
+		addq.l	#4,a1
+		dbf		d7,.setCols2
 		bra		.render2
 
 ************************************************************
@@ -297,12 +399,9 @@ DB_RotateDots:
         ext.l   d0
         asl.l   #7,d0
         divs    d3,d0
-		; asr.l	#1,d0
 
         ; Project y
         ext.l   d1
-        ; asl.l   #7,d1
-        ; divs    d3,d1
 		asr.l	#1,d1
 
 		movem.w	d0-d2,(a1)
@@ -360,7 +459,6 @@ DB_RenderDots:
 		PUSH	a6
 
         move.l  DrawBuffer,a0
-		; lea.l	512*40(a0),a0
 		lea.l	(192*2)*40(a0),a0
         lea.l   DB_RotatedCoords(pc),a1
         lea.l   DB_DotMask,a4
@@ -399,7 +497,6 @@ DB_RenderDots:
 		move.w	(a6,d2.w),d2
 
 .scaleDone:
-        ; add.w   #160-8,d2
 		add.w	d0,d2
         move.w  d2,d4
         move.w  (a1)+,d3
@@ -417,19 +514,11 @@ DB_RenderDots:
 .ok2:	
 		lsl.w	#6,d1
 
-        ; add.w   #128-8,d3
         add.w   #(192/2)-8,d3
         lsr.w   #3,d2
         and.w   #$fffe,d2
         and.w   #15,d4
-		; mulu	#640,d4
-		; ext.l	d4
-		; ; moveq	#9,d0
-		; move.w	d4,d5
-		; lsl.l	#8,d4
-		; lsl.l	#1,d4
-		; lsl.w	#7,d5
-		; add.l	d5,d4
+
 		add.w	d4,d4
 		add.w	#512,d4
 		move.w	(a2,d4.w),d4
@@ -448,11 +537,9 @@ DB_RenderDots:
 		lsr.w	#6,d1
 		cmp.w	#2,d1
 		ble.b	.renderDot
-		; lea.l	-256*40(a5),a5
 		lea.l	-192*40(a5),a5
 		cmp.w	#4,d1
 		ble.b	.renderDot
-		; lea.l	-256*40(a5),a5
 		lea.l	-192*40(a5),a5
 
 .renderDot:
@@ -460,7 +547,6 @@ I       SET     0
         REPT    16
         move.l  (a3)+,d5
         or.l    d5,I(a5)
-		; or.l	#$ff,I(a5)
 I       SET     I+40
         ENDR
 
@@ -477,6 +563,7 @@ I       SET     I+40
 		even
 DB_LocalFrameCounter:		dc.l	0
 
+DB_AddDots:					dc.w	DB_InitialDots-2
 DB_DotCount:				dc.w	DB_InitialDots
 DB_CurrentMorphStep:		dc.w	0
 DB_MorphTable:				dc.w    0, 0, 0, 0, 0, 0, 0, 0
@@ -500,6 +587,14 @@ DB_MorphTable:				dc.w    0, 0, 0, 0, 0, 0, 0, 0
 DB_Angles:					dc.w	0,0,0
 DB_ScaleValue:				dc.w	0
 DB_ScaleSinIndex:			dc.w	0
+
+DB_PalettePtr:				dc.l	DB_OriginalPalette
+DB_InvertedPalette:			dc.w	$0fed,$0ba9,$0876,$0654
+							dc.w	$0432,$0321,$0210,$0000
+DB_OriginalPalette:			dc.w	$0012,$0456,$0789,$09ab
+							dc.w	$0bcd,$0cde,$0def,$0fff
+DB_HeartPalette:			dc.w	$0201,$0645,$0978,$0b9a
+							dc.w	$0dbc,$0ecd,$0fde,$0fff
 
 DB_BallCenterX:				dc.w	160
 DB_BallCenterXTablePtr:		dc.l	DB_BallCenterXTable
@@ -533,6 +628,56 @@ DB_RotatedCoords:			ds.w	3*(DB_InitialDots+(2*(DB_InitialDots-2)))
 DB_ScaleTableNeg:			ds.w	128*64
 DB_ScaleTablePos:			ds.w	128*64
 
+; Scale macros
+SCALEUP:	MACRO
+			dc.w	(\1*70)>>6,(\2*70)>>6,\3
+			ENDM
+SCALEDOWN:	MACRO
+			dc.w	(\1*50)>>6,(\2*50)>>6,\3
+			ENDM
+DB_HeartCoords:				SCALEUP		0,-40,0
+							SCALEUP		20,-60,0
+							SCALEUP		36,-56,0
+							SCALEUP		52,-28,0
+							SCALEUP		48,4,0
+							SCALEUP		24,20,0
+							SCALEUP		12,32,0
+							SCALEUP		0,52,0
+							SCALEUP		-12,32,0
+							SCALEUP		-24,20,0
+							SCALEUP		-48,4,0
+							SCALEUP		-52,-28,0
+							SCALEUP		-36,-56,0
+							SCALEUP		-20,-60,0
+
+HEART_Z	SET	-26
+							SCALEDOWN	20,-60,HEART_Z
+							SCALEDOWN	36,-56,HEART_Z
+							SCALEDOWN	52,-28,HEART_Z
+							SCALEDOWN	48,4,HEART_Z
+							SCALEDOWN	24,20,HEART_Z
+							SCALEDOWN	12,32,HEART_Z
+							SCALEDOWN	-12,32,HEART_Z
+							SCALEDOWN	-24,20,HEART_Z
+							SCALEDOWN	-48,4,HEART_Z
+							SCALEDOWN	-52,-28,HEART_Z
+							SCALEDOWN	-36,-56,HEART_Z
+							SCALEDOWN	-20,-60,HEART_Z
+
+HEART_Z	SET	26
+							SCALEDOWN	20,-60,HEART_Z
+							SCALEDOWN	36,-56,HEART_Z
+							SCALEDOWN	52,-28,HEART_Z
+							SCALEDOWN	48,4,HEART_Z
+							SCALEDOWN	24,20,HEART_Z
+							SCALEDOWN	12,32,HEART_Z
+							SCALEDOWN	-12,32,HEART_Z
+							SCALEDOWN	-24,20,HEART_Z
+							SCALEDOWN	-48,4,HEART_Z
+							SCALEDOWN	-52,-28,HEART_Z
+							SCALEDOWN	-36,-56,HEART_Z
+							SCALEDOWN	-20,-60,HEART_Z
+
 ************************************************************
 *
 * Copper
@@ -553,6 +698,7 @@ DB_Copper:
 		dc.w	$010a,$0000
 		dc.w	$0100,$0000
 
+DB_CopCols:
 		dc.w	$0180,$0012
 		dc.w	$0182,$0456
 		dc.w	$0184,$0789
@@ -578,6 +724,5 @@ DB_BplPtrs:
 
 		dc.w	$ffff,$fffe
 		dc.w	$ffff,$fffe
-
 
 DB_DotMask:					ds.l	160*16

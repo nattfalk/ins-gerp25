@@ -1,2 +1,1 @@
-..\..\tools\Shrinkler.exe uae\dh0\ins-gerp25 ins-gerp25.exe
-REM  -T ins-weareback.nfo
+..\..\tools\Shrinkler.exe uae\dh0\ins-gerp25 ins-lowreskids.exe -T ins-lowreskids.nfo

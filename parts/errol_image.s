@@ -8,6 +8,50 @@
 ************************************************************
 * Initialize
 ************************************************************
+ErrolImage_FinalInit:
+        bsr     ErrolImage_Init
+
+        lea.l   EI_CopCols,a0
+        moveq   #16-1,d7
+.clearPal:
+        move.w  #$0012,2(a0)
+        addq.l  #4,a0
+        dbf     d7,.clearPal
+
+        lea.l   EI_ImageRip,a0
+        lea.l   ChipBuf,a1
+        adda.l  #(320*195)>>3,a1
+        moveq   #4-1,d7
+.copy:  moveq   #32-1,d6
+.copyY: moveq   #(128>>3)-1,d5
+.copyX: move.b  (a0)+,(a1)+
+        dbf     d5,.copyX
+        adda.l  #(320-128)>>3,a1
+        dbf     d6,.copyY
+        adda.l  #(320*(256-32))>>3,a1
+        dbf     d7,.copy
+
+        lea.l   ChipBuf,a1
+        adda.l  #(320*54)>>3,a1
+        moveq   #4-1,d7
+.copy2: moveq   #23-1,d6
+.copyY2:moveq   #(176>>3)-1,d5
+.copyX2:clr.b   (a1)+
+        dbf     d5,.copyX2
+        adda.l  #(320-176)>>3,a1
+        dbf     d6,.copyY2
+        adda.l  #(320*(256-23))>>3,a1
+        dbf     d7,.copy2
+
+        clr.l   EI_LocalFrameCounter
+        clr.w   EI_DoGlitch
+        bsr     EI_ResetGlitch
+
+        move.l  #EI_ImagePalOrange,EI_FadePalettePtr
+
+        move.l  #22*50,EI_FadeOutTriggerFrame
+        rts
+
 ErrolImage_Init:
 	lea.l	$dff000,a6
 
@@ -38,7 +82,46 @@ ErrolImage_Init:
 ************************************************************
 * Run
 ************************************************************
+ErrolImage_RunFinal:
+        cmp.l   #15*50,EI_LocalFrameCounter
+        bmi.s   .done
+        cmp.l   #16*50,EI_LocalFrameCounter
+        bmi.s   .fadeIn
+        cmp.l   #16*50,EI_LocalFrameCounter
+        beq.s   .resetFade
+        move.l  EI_FadeOutTriggerFrame(pc),d0
+        cmp.l   EI_LocalFrameCounter,d0
+        bmi.s   .fadeOut
+.done:  
+        addq.l  #1,EI_LocalFrameCounter
+        rts
+
+.fadeIn:
+        lea.l   EI_ImageFadePal(pc),a0
+        move.l  EI_FadePalettePtr(pc),a1
+        lea.l   EI_CopCols,a2
+        moveq   #24,d0
+        moveq   #16-1,d1
+        jsr     Fade
+        bra.s   .done
+
+.fadeOut:
+        move.l  EI_FadePalettePtr(pc),a0
+        lea.l   EI_ImageFadePal(pc),a1
+        lea.l   EI_CopCols,a2
+        moveq   #24,d0
+        moveq   #16-1,d1
+        jsr     Fade
+        bra.s   .done
+
+.resetFade:
+        jsr     InitFade
+        bra.s   .done
+
 ErrolImage_Run:
+        tst.w   EI_DoGlitch
+        beq.s   .skipGlitch
+
         cmp.l   #100,EI_LocalFrameCounter
         bgt.s   .resetGlitch
         bsr     EI_Glitch
@@ -52,15 +135,16 @@ ErrolImage_Run:
         bmi.s   .fadeIn
         cmp.l   #50,EI_LocalFrameCounter
         beq.s   .resetFade
-        cmp.l   #375,EI_LocalFrameCounter
-        bge.s   .fadeOut
+        move.l  EI_FadeOutTriggerFrame(pc),d0
+        cmp.l   EI_LocalFrameCounter,d0
+        bmi.s   .fadeOut
 .done:  
         addq.l  #1,EI_LocalFrameCounter
         rts
 
 .fadeIn:
         lea.l   EI_ImageFadePal(pc),a0
-        lea.l   EI_ImagePal(pc),a1
+        move.l  EI_FadePalettePtr(pc),a1
         lea.l   EI_CopCols,a2
         moveq   #24,d0
         moveq   #16-1,d1
@@ -68,7 +152,7 @@ ErrolImage_Run:
         bra.s   .done
 
 .fadeOut:
-        lea.l   EI_ImagePal(pc),a0
+        move.l  EI_FadePalettePtr(pc),a0
         lea.l   EI_ImageFadePal(pc),a1
         lea.l   EI_CopCols,a2
         moveq   #24,d0
@@ -127,9 +211,13 @@ EI_ResetGlitch:
 EI_LocalFrameCounter:   dc.l    0
 EI_FadeStage:           dc.w    0
 
+EI_FadeOutTriggerFrame: dc.l    375
+EI_FadePalettePtr:      dc.l    EI_ImagePal
 EI_ImageFadePal:        dcb.w   32,$0012
 EI_ImagePal:            incbin  "data/graphics/errol_320x256x4.pal"
+EI_ImagePalOrange:      incbin  "data/graphics/errol_plain_320x256x4.pal"
 
+EI_DoGlitch:            dc.w    1
 EI_GlitchPointers:      dc.l    EI_GlitchRow1
                         dc.l    EI_GlitchRow2
                         dc.l    EI_GlitchRow3
@@ -222,3 +310,4 @@ EI_GlitchRow6:
         section EI_ChipData, DATA_P
 
 EI_Image:	incbin	"data/graphics/errol_320x256x4.raw"
+EI_ImageRip:	incbin	"data/graphics/errol_rip_128x32x4.raw"

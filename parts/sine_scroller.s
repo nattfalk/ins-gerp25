@@ -253,9 +253,6 @@ SS_PrintChar:
 		bne.s	.print
 		move.b	#1,SS_ScrollTextDone
 		bra		.printDone
-		; move.l	#SS_Text,SS_TextPtr
-		; move.l	SS_TextPtr(pc),a0
-		; bra		.testReset
 .print:	addq.l	#1,SS_TextPtr
 		sub.b	#' ',d0
         and.w   #$ff,d0
@@ -268,7 +265,6 @@ SS_PrintChar:
 I       SET     0
         REPT    SS_FONT_HEIGHT
         move.w  I*2(a1),I*42(a2)
-        ; move.b  #0,I*42+1(a2)
 I       SET     I+1
         ENDR
 .printDone:
@@ -362,11 +358,9 @@ SS_SinIndex:		dc.w	0,0
 
 SS_CustomSinTab:	ds.w	1024
 							;0123456789012345678901234567890123456789
-SS_Text:			
-					dc.b	'****************************************'
-					dc.b	'        -INSANE-        AT GERP 2025    '
-					dc.b	'    WITH LOVE AND HEXTJOGLAD'
-					dc.b	'                                         ',0
+SS_Text:			dc.b	'-INSANE- AT GERP 2025 '
+					dc.b	'WITH LOVE AND HEXTJOGLAD'
+					dc.b	'                                        ',0
 					even
 SS_TextPtr:			dc.l	SS_Text
 SS_ScrollTextDone:	dc.w	0
@@ -460,15 +454,6 @@ SS_Copper:
 		dc.w	$0104,$0000
 		dc.w	$0108,$0000
 		dc.w	$010a,$0000
-
-* 0134
-* 0245
-* 0556
-* 0978
-* 0d86
-* 0fb6
-* 0fda
-* 0fed
 
 		dc.w	$0180
 SS_COL_00:dc.w	$0fed
