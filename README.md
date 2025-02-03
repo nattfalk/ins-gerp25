@@ -1,5 +1,7 @@
 # iNSANE - LOWRES KIDS
 Amiga OCS demo for Gerp 2025 - placed 2nd in compo
+
+Pouet.net link: https://www.pouet.net/prod.php?which=103450
   
 Code by Prospect  
 Music by Alpa  
